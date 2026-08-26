@@ -1,0 +1,357 @@
+erDiagram
+
+    caja_empresa {
+        id_movimiento Integer PK
+        id_empresa Integer FK
+        id_tipo_movimiento Integer FK
+        id_medio_pago Integer FK
+        fecha DateTime
+        tipo String
+        monto Numeric
+        observacion Text
+    }
+    camion_reparto {
+        patente String PK
+        id_empresa Integer FK
+        activo Boolean
+    }
+    cliente {
+        legajo Integer PK
+        id_empresa Integer FK
+        dni BigInteger FK
+        observacion Text
+    }
+    cliente_cuenta {
+        id_cuenta Integer PK
+        legajo Integer FK
+        saldo Numeric
+        deuda Numeric
+        estado String
+        tipo_de_cuenta String
+        numero_bidones Integer
+    }
+    cliente_dia_semana {
+        id_cliente Integer PK FK
+        id_dia SmallInteger PK FK
+        turno_visita String
+        orden SmallInteger
+    }
+    cliente_reparto_dia {
+        id_repartodia Integer PK FK
+        legajo Integer PK FK
+        bidones_entregado Integer
+        monto_abonado Numeric
+        estado_de_la_visita String
+        turno_de_la_visita String
+        observacion Text
+    }
+    cuenta_bancaria_empresa {
+        id_cuenta Integer PK
+        id_empresa Integer FK
+        titular_cuenta String
+        cbu String
+        alias String
+        numero_de_cuenta String
+        tipo_cuenta String
+        banco String
+        activa Boolean
+    }
+    dia_semana {
+        id_dia SmallInteger PK
+        nombre_dia String
+    }
+    direccion_cliente {
+        id_direccion Integer PK
+        legajo Integer FK
+        localidad String
+        direccion String
+        zona String
+        entre_calle1 String
+        entre_calle2 String
+        observacion Text
+        tipo String
+        latitud_longitud String
+    }
+    documentos {
+        id_documento Integer PK
+        legajo Integer FK
+        nombre_archivo String
+        tipo_archivo String
+        url_archivo String
+        fecha_carga DateTime
+        observacion Text
+    }
+    mail_cliente {
+        id_mail Integer PK
+        legajo Integer FK
+        mail String
+        estado String
+        observacion Text
+    }
+    empleado {
+        legajo Integer PK
+        dni BigInteger FK
+        id_empresa Integer FK
+        fecha_ingreso Date
+    }
+    empresa {
+        id_empresa Integer PK
+        razon_social String
+    }
+    historico {
+        id_historico Integer PK
+        legajo Integer FK
+        id_evento Integer FK
+        fecha DateTime
+        observacion Text
+        datos JSONB
+    }
+    lista_de_precios {
+        id_lista Integer PK
+        nombre String
+        fecha_creacion DateTime
+        estado String
+    }
+    lista_precio_producto {
+        id_lista Integer PK FK
+        id_producto Integer PK FK
+        precio Numeric
+    }
+    medio_pago {
+        id_medio_pago Integer PK
+        nombre String
+    }
+    movimiento_stock {
+        id_movimiento Integer PK
+        id_producto Integer FK
+        id_recorrido Integer FK
+        id_pedido Integer FK
+        fecha DateTime
+        tipo_movimiento String
+        cantidad Integer
+        observacion Text
+    }
+    pedido {
+        id_pedido Integer PK
+        legajo Integer FK
+        id_medio_pago Integer FK
+        id_empresa Integer FK
+        id_repartodia Integer FK
+        id_cuenta Integer FK
+        fecha DateTime
+        monto_total Numeric
+        monto_abonado Numeric
+        estado String
+        observacion Text
+    }
+    pedido_producto {
+        id_pedido_producto Integer PK
+        id_pedido Integer FK
+        id_producto Integer FK
+        id_combo Integer FK
+        cantidad Integer
+        precio_unitario Numeric
+    }
+    persona {
+        dni BigInteger PK
+        apellido String
+        nombre String
+    }
+    producto {
+        id_producto Integer PK
+        nombre String
+        estado String
+        litros Numeric
+        tipo_dispenser String
+        observacion Text
+        descuenta_stock Boolean
+    }
+    producto_cliente {
+        legajo Integer PK FK
+        id_producto Integer PK FK
+        cantidad Integer
+        estado String
+        fecha_entrega Date
+    }
+    recorrido {
+        id_recorrido Integer PK
+        id_empleado Integer FK
+        id_repartodia Integer FK
+        id_camion String FK
+        dinero_inicial Numeric
+        stock_inicial Integer
+        observacion Text
+    }
+    reparto_dia {
+        id_repartodia Integer PK
+        id_usuario Integer FK
+        id_empresa Integer FK
+        fecha Date
+        total_recaudado Numeric
+        total_efectivo Numeric
+        total_virtual Numeric
+        observacion Text
+    }
+    rol {
+        id_rol Integer PK
+        nombre String
+        descripcion Text
+    }
+    stock {
+        id_stock Integer PK
+        id_producto Integer FK
+        id_empresa Integer FK
+        cantidad Integer
+    }
+    telefono_cliente {
+        id_telefono Integer PK
+        legajo Integer FK
+        nro_telefono String
+        estado String
+        observacion Text
+    }
+    tipo_evento {
+        id_evento Integer PK
+        nombre String
+    }
+    tipo_movimiento_caja {
+        id_tipo_movimiento Integer PK
+        descripcion String
+    }
+    usuario {
+        id_usuario Integer PK
+        nombre_usuario String
+        contraseña String
+        legajo_empleado Integer FK
+        legajo_cliente Integer FK
+    }
+    usuario_rol {
+        id_usuario Integer PK FK
+        id_rol Integer PK FK
+    }
+    visita {
+        id_visita Integer PK
+        legajo Integer FK
+        fecha DateTime
+        estado String
+    }
+    combo {
+        id_combo Integer PK
+        id_empresa Integer FK
+        nombre String
+        descripcion Text
+        estado Boolean
+    }
+    combo_producto {
+        id_combo Integer PK FK
+        id_producto Integer PK FK
+        cantidad Integer
+    }
+    lista_precio_combo {
+        id_lista Integer PK FK
+        id_combo Integer PK FK
+        precio Numeric
+    }
+    cliente_servicio_periodo {
+        id_periodo Integer PK
+        id_cliente_servicio Integer FK
+        periodo Date
+        monto Numeric
+        monto_pendiente Numeric
+        estado String
+        fecha_vencimiento Date
+        fecha_pago Date
+        created_at DateTime
+    }
+    pago {
+        id_pago Integer PK
+        id_empresa Integer FK
+        legajo Integer FK
+        id_cuenta Integer FK
+        id_pedido Integer FK
+        id_repartodia Integer FK
+        id_medio_pago Integer FK
+        fecha DateTime
+        monto Numeric
+        tipo_pago String
+        observacion Text
+        id_cliente_servicio_periodo Integer FK
+    }
+    cliente_servicio {
+        id_cliente_servicio Integer PK
+        legajo Integer FK
+        tipo_servicio String
+        monto_mensual Numeric
+        fecha_inicio Date
+        activo Boolean
+        created_at DateTime
+    }
+    lista_precio_servicio {
+        id_lista Integer PK FK
+        id_cliente_servicio Integer PK FK
+        precio Numeric
+    }
+
+    camion_reparto ||--o{ recorrido : "id_camion"
+    cliente ||--o{ cliente_cuenta : "legajo"
+    cliente ||--o{ cliente_dia_semana : "id_cliente"
+    cliente ||--o{ cliente_reparto_dia : "legajo"
+    cliente ||--o{ cliente_servicio : "legajo"
+    cliente ||--o{ direccion_cliente : "legajo"
+    cliente ||--o{ documentos : "legajo"
+    cliente ||--o{ historico : "legajo"
+    cliente ||--o{ mail_cliente : "legajo"
+    cliente ||--o{ pago : "legajo"
+    cliente ||--o{ pedido : "legajo"
+    cliente ||--o{ producto_cliente : "legajo"
+    cliente ||--o{ telefono_cliente : "legajo"
+    cliente ||--o{ usuario : "legajo_cliente"
+    cliente ||--o{ visita : "legajo"
+    cliente_cuenta ||--o{ pago : "id_cuenta"
+    cliente_cuenta ||--o{ pedido : "id_cuenta"
+    cliente_servicio ||--o{ cliente_servicio_periodo : "id_cliente_servicio"
+    cliente_servicio ||--o{ lista_precio_servicio : "id_cliente_servicio"
+    cliente_servicio_periodo ||--o{ pago : "id_cliente_servicio_periodo"
+    combo ||--o{ combo_producto : "id_combo"
+    combo ||--o{ lista_precio_combo : "id_combo"
+    combo ||--o{ pedido_producto : "id_combo"
+    dia_semana ||--o{ cliente_dia_semana : "id_dia"
+    empleado ||--o{ recorrido : "id_empleado"
+    empleado ||--o{ usuario : "legajo_empleado"
+    empresa ||--o{ caja_empresa : "id_empresa"
+    empresa ||--o{ camion_reparto : "id_empresa"
+    empresa ||--o{ cliente : "id_empresa"
+    empresa ||--o{ combo : "id_empresa"
+    empresa ||--o{ cuenta_bancaria_empresa : "id_empresa"
+    empresa ||--o{ empleado : "id_empresa"
+    empresa ||--o{ pago : "id_empresa"
+    empresa ||--o{ pedido : "id_empresa"
+    empresa ||--o{ reparto_dia : "id_empresa"
+    empresa ||--o{ stock : "id_empresa"
+    lista_de_precios ||--o{ lista_precio_combo : "id_lista"
+    lista_de_precios ||--o{ lista_precio_producto : "id_lista"
+    lista_de_precios ||--o{ lista_precio_servicio : "id_lista"
+    medio_pago ||--o{ caja_empresa : "id_medio_pago"
+    medio_pago ||--o{ pago : "id_medio_pago"
+    medio_pago ||--o{ pedido : "id_medio_pago"
+    pedido ||--o{ movimiento_stock : "id_pedido"
+    pedido ||--o{ pago : "id_pedido"
+    pedido ||--o{ pedido_producto : "id_pedido"
+    persona ||--o{ cliente : "dni"
+    persona ||--o{ empleado : "dni"
+    producto ||--o{ combo_producto : "id_producto"
+    producto ||--o{ lista_precio_producto : "id_producto"
+    producto ||--o{ movimiento_stock : "id_producto"
+    producto ||--o{ pedido_producto : "id_producto"
+    producto ||--o{ producto_cliente : "id_producto"
+    producto ||--o{ stock : "id_producto"
+    recorrido ||--o{ movimiento_stock : "id_recorrido"
+    reparto_dia ||--o{ cliente_reparto_dia : "id_repartodia"
+    reparto_dia ||--o{ pago : "id_repartodia"
+    reparto_dia ||--o{ pedido : "id_repartodia"
+    reparto_dia ||--o{ recorrido : "id_repartodia"
+    rol ||--o{ usuario_rol : "id_rol"
+    tipo_evento ||--o{ historico : "id_evento"
+    tipo_movimiento_caja ||--o{ caja_empresa : "id_tipo_movimiento"
+    usuario ||--o{ reparto_dia : "id_usuario"
+    usuario ||--o{ usuario_rol : "id_usuario"

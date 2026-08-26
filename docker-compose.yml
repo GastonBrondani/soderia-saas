@@ -1,0 +1,62 @@
+#version: "3.9"
+
+services:
+  db:
+    image: postgres:17
+    container_name: soderia_db
+    restart: always
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      TZ: America/Argentina/Buenos_Aires
+      PGTZ: America/Argentina/Buenos_Aires
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # Usamos $$ para que el shell dentro del contenedor expanda las vars en runtime
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Servicio de backend para desarrollo
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: soderia_backend
+    env_file:
+      - .env
+    ports:
+      #- "8500:8000" 
+      - "127.0.0.1:8719:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/app   # montaje en caliente
+    profiles: ["dev"]
+
+  # Servicio de backend para producción
+  backend-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: soderia_backend_prod
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    # sin volumes en prod
+    profiles: ["prod"]
+
+volumes:
+  pgdata:

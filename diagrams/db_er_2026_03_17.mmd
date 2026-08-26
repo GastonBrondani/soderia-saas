@@ -1,0 +1,337 @@
+erDiagram
+
+    caja_empresa {
+        int id_movimiento PK
+        int id_empresa FK
+        int id_tipo_movimiento FK
+        int id_medio_pago FK
+        string fecha
+        string tipo
+        string monto
+        string observacion
+    }
+    camion_reparto {
+        string patente
+        int id_empresa FK
+        string activo
+    }
+    cliente {
+        int legajo PK
+        int id_empresa FK
+        int dni FK
+        string observacion
+    }
+    cliente_cuenta {
+        int id_cuenta PK
+        int legajo FK
+        string saldo
+        string deuda
+        string estado
+        string tipo_de_cuenta
+        string numero_bidones
+    }
+    cliente_dia_semana {
+        int id_cliente FK
+        int id_dia FK
+        string turno_visita
+        string orden
+    }
+    cliente_reparto_dia {
+        int id_repartodia FK
+        int legajo FK
+        string bidones_entregado
+        string monto_abonado
+        string estado_de_la_visita
+        string turno_de_la_visita
+        string observacion
+    }
+    cliente_servicio {
+    }
+    cliente_servicio_periodo {
+    }
+    combo {
+        int id_combo PK
+        int id_empresa FK
+        string nombre
+        string descripcion
+        string estado
+    }
+    combo_producto {
+        int id_combo FK
+        int id_producto FK
+        string cantidad
+    }
+    cuenta_bancaria_empresa {
+        int id_cuenta PK
+        int id_empresa FK
+        string titular_cuenta
+        string cbu
+        string alias
+        string numero_de_cuenta
+        string tipo_cuenta
+        string banco
+        string activa
+    }
+    dia_semana {
+        int id_dia PK
+        string nombre_dia
+    }
+    direccion_cliente {
+        int id_direccion PK
+        int legajo FK
+        string localidad
+        string direccion
+        string zona
+        string entre_calle1
+        string entre_calle2
+        string observacion
+        string tipo
+        string latitud_longitud
+    }
+    documentos {
+        int id_documento PK
+        int legajo FK
+        string nombre_archivo
+        string tipo_archivo
+        string url_archivo
+        string fecha_carga
+        string observacion
+    }
+    mail_cliente {
+        int id_mail PK
+        int legajo FK
+        string mail
+        string estado
+        string observacion
+    }
+    empleado {
+        int legajo PK
+        int dni FK
+        int id_empresa FK
+        string fecha_ingreso
+    }
+    empresa {
+        int id_empresa PK
+        string razon_social
+    }
+    historico {
+        int id_historico PK
+        int legajo FK
+        int id_evento FK
+        string fecha
+        string observacion
+        string datos
+    }
+    lista_de_precios {
+        int id_lista PK
+        string nombre
+        string fecha_creacion
+        string estado
+    }
+    lista_precio_combo {
+        int id_lista FK
+        int id_combo FK
+        string precio
+    }
+    lista_precio_producto {
+        int id_lista FK
+        int id_producto FK
+        string precio
+    }
+    lista_precio_servicio {
+        int id_lista FK
+        int id_cliente_servicio FK
+        string precio
+    }
+    medio_pago {
+        int id_medio_pago PK
+        string nombre
+    }
+    movimiento_stock {
+        int id_movimiento PK
+        int id_producto FK
+        int id_recorrido FK
+        int id_pedido FK
+        string fecha
+        string tipo_movimiento
+        string cantidad
+        string observacion
+    }
+    pago {
+        int id_pago PK
+        int id_empresa FK
+        int legajo FK
+        int id_cuenta FK
+        int id_pedido FK
+        int id_repartodia FK
+        int id_medio_pago FK
+        string fecha
+        string monto
+        string tipo_pago
+        string observacion
+        int id_cliente_servicio_periodo FK
+    }
+    pedido {
+        int id_pedido PK
+        int legajo FK
+        int id_medio_pago FK
+        int id_empresa FK
+        int id_repartodia FK
+        int id_cuenta FK
+        string fecha
+        string monto_total
+        string monto_abonado
+        string estado
+        string observacion
+    }
+    pedido_producto {
+        int id_pedido_producto PK
+        int id_pedido FK
+        int id_producto FK
+        int id_combo FK
+        string cantidad
+        string precio_unitario
+    }
+    persona {
+        int dni PK
+        string apellido
+        string nombre
+    }
+    producto {
+        int id_producto PK
+        string nombre
+        string estado
+        string litros
+        string tipo_dispenser
+        string observacion
+        string listas_precios
+    }
+    producto_cliente {
+        int legajo FK
+        int id_producto FK
+        string cantidad
+        string estado
+        string fecha_entrega
+    }
+    recorrido {
+        int id_recorrido PK
+        int id_empleado FK
+        int id_repartodia FK
+        string id_camion
+        string dinero_inicial
+        string stock_inicial
+        string observacion
+    }
+    reparto_dia {
+        int id_repartodia PK
+        int id_usuario FK
+        int id_empresa FK
+        string fecha
+        string total_recaudado
+        string total_efectivo
+        string total_virtual
+        string observacion
+    }
+    rol {
+        int id_rol PK
+        string nombre
+        string descripcion
+    }
+    stock {
+        int id_stock PK
+        int id_producto FK
+        int id_empresa FK
+        string cantidad
+    }
+    telefono_cliente {
+        int id_telefono PK
+        int legajo FK
+        string nro_telefono
+        string estado
+        string observacion
+    }
+    tipo_evento {
+        int id_evento PK
+        string nombre
+    }
+    tipo_movimiento_caja {
+        int id_tipo_movimiento PK
+        string descripcion
+    }
+    usuario {
+        int id_usuario PK
+        string nombre_usuario
+        string contrasena
+        int legajo_empleado FK
+        int legajo_cliente FK
+    }
+    usuario_rol {
+        int id_usuario FK
+        int id_rol FK
+    }
+    visita {
+        int id_visita PK
+        int legajo FK
+        string fecha
+        string estado
+    }
+    cliente ||--o{ cliente_cuenta : "legajo"
+    cliente ||--o{ cliente_dia_semana : "id_cliente"
+    cliente ||--o{ cliente_reparto_dia : "legajo"
+    cliente ||--o{ direccion_cliente : "legajo"
+    cliente ||--o{ documentos : "legajo"
+    cliente ||--o{ historico : "legajo"
+    cliente ||--o{ mail_cliente : "legajo"
+    cliente ||--o{ pago : "legajo"
+    cliente ||--o{ pedido : "legajo"
+    cliente ||--o{ producto_cliente : "legajo"
+    cliente ||--o{ telefono_cliente : "legajo"
+    cliente ||--o{ usuario : "legajo_cliente"
+    cliente ||--o{ visita : "legajo"
+    cliente_cuenta ||--o{ pago : "id_cuenta"
+    cliente_cuenta ||--o{ pedido : "id_cuenta"
+    cliente_servicio ||--o{ lista_precio_servicio : "id_cliente_servicio"
+    cliente_servicio_periodo ||--o{ pago : "id_cliente_servicio_periodo"
+    combo ||--o{ combo_producto : "id_combo"
+    combo ||--o{ lista_precio_combo : "id_combo"
+    combo ||--o{ pedido_producto : "id_combo"
+    dia_semana ||--o{ cliente_dia_semana : "id_dia"
+    empleado ||--o{ recorrido : "id_empleado"
+    empleado ||--o{ usuario : "legajo_empleado"
+    empresa ||--o{ caja_empresa : "id_empresa"
+    empresa ||--o{ camion_reparto : "id_empresa"
+    empresa ||--o{ cliente : "id_empresa"
+    empresa ||--o{ combo : "id_empresa"
+    empresa ||--o{ cuenta_bancaria_empresa : "id_empresa"
+    empresa ||--o{ empleado : "id_empresa"
+    empresa ||--o{ pago : "id_empresa"
+    empresa ||--o{ pedido : "id_empresa"
+    empresa ||--o{ reparto_dia : "id_empresa"
+    empresa ||--o{ stock : "id_empresa"
+    lista_de_precios ||--o{ lista_precio_combo : "id_lista"
+    lista_de_precios ||--o{ lista_precio_producto : "id_lista"
+    lista_de_precios ||--o{ lista_precio_servicio : "id_lista"
+    medio_pago ||--o{ caja_empresa : "id_medio_pago"
+    medio_pago ||--o{ pago : "id_medio_pago"
+    medio_pago ||--o{ pedido : "id_medio_pago"
+    pedido ||--o{ movimiento_stock : "id_pedido"
+    pedido ||--o{ pago : "id_pedido"
+    pedido ||--o{ pedido_producto : "id_pedido"
+    persona ||--o{ cliente : "dni"
+    persona ||--o{ empleado : "dni"
+    producto ||--o{ combo_producto : "id_producto"
+    producto ||--o{ lista_precio_producto : "id_producto"
+    producto ||--o{ movimiento_stock : "id_producto"
+    producto ||--o{ pedido_producto : "id_producto"
+    producto ||--o{ producto_cliente : "id_producto"
+    producto ||--o{ stock : "id_producto"
+    recorrido ||--o{ movimiento_stock : "id_recorrido"
+    reparto_dia ||--o{ cliente_reparto_dia : "id_repartodia"
+    reparto_dia ||--o{ pago : "id_repartodia"
+    reparto_dia ||--o{ pedido : "id_repartodia"
+    reparto_dia ||--o{ recorrido : "id_repartodia"
+    rol ||--o{ usuario_rol : "id_rol"
+    tipo_evento ||--o{ historico : "id_evento"
+    tipo_movimiento_caja ||--o{ caja_empresa : "id_tipo_movimiento"
+    usuario ||--o{ reparto_dia : "id_usuario"
+    usuario ||--o{ usuario_rol : "id_usuario"
