@@ -257,6 +257,9 @@ con movimientos de archivos.
   seguridad, pero sigue viniendo del cliente. Donde tenga sentido (sucursal),
   que salga del usuario autenticado.
 - `empleado.py` tiene `id_empresa=1` hardcodeado en dos lugares.
+- `pago.py` también: `crear_ingreso` y `crear_egreso` tienen
+  `id_empresa=1` hardcodeado. Encontrado en el paso 3 al limpiar código
+  comentado, no estaba anotado.
 
 **Bugs silenciosos** (se pueden arreglar sin tocar el contrato):
 
@@ -305,9 +308,14 @@ en el contrato. Sin autenticación: `POST /auth/login`, `POST /auth/token`,
 - Los services levantan `HTTPException` directamente. Van migrando a los
   errores de dominio de `core/exceptions.py`, así se pueden usar desde un
   script o un job sin arrastrar FastAPI.
-- Hay bloques grandes de código comentado en `repartoDia.py`,
-  `clienteDiaSemana.py`, `listaPrecios.py` y `pago.py`. Se borran: git ya se
-  acuerda.
+- ~~Hay bloques grandes de código comentado en `repartoDia.py`,
+  `clienteDiaSemana.py`, `listaPrecios.py` y `pago.py`.~~ **Borrados en el
+  paso 3 (2026-09-14).** Junto con imports que solo usaban esos bloques
+  (`pg_insert` duplicado dos veces en `clienteDiaSemana.py`,
+  `RepartoDiaUpdate`/`RegistrarCobroIn` en `reparto_dia.py`). Ninguno estaba
+  registrado como ruta activa (los de `listaPrecios.py` y `clienteDiaSemana.py`
+  eran bloques `"""..."""`, invisibles para FastAPI), así que no cambia
+  comportamiento.
 
 ---
 

@@ -6,7 +6,7 @@ from datetime import date
 
 from app.core.database import get_db
 from app.features.repartos.repartos_dia.schemas.reparto_dia import (
-    RepartoDiaCreate, RepartoDiaUpdate, RepartoDiaOut, RegistrarCobroIn
+    RepartoDiaCreate, RepartoDiaOut
 )
 from app.features.sincronizacion.schemas import RepartoBootstrapOut
 from app.features.repartos.repartos_dia.services.reparto_dia import RepartoDiaService
@@ -74,33 +74,3 @@ def listar_repartos_por_rango(
 @router.post("/{id_repartodia}/cerrar", response_model=RepartoDiaOut)
 def cerrar_reparto_dia(id_repartodia: int, db: Session = Depends(get_db)):
     return RepartoDiaService.cerrar(db, id_repartodia=id_repartodia)
-
-    
-#--------------------------------------------
-#Desabilitado por ahora el actulizar reparto del dia y eliminar
-#@router.put("/{id_repartodia}", response_model=RepartoDiaOut)
-#def actualizar_reparto_dia(
-#    id_repartodia: int, payload: RepartoDiaUpdate, db: Session = Depends(get_db)
-#):
-#    return RepartoDiaService.update(
-#        db,
-#        id_repartodia=id_repartodia,
-#        id_usuario=payload.id_usuario,
-#        id_empresa=payload.id_empresa,
-#        fecha=payload.fecha,
-#        observacion=payload.observacion,
-#    )
-
-#@router.delete("/{id_repartodia}", status_code=status.HTTP_204_NO_CONTENT)
-#def eliminar_reparto_dia(id_repartodia: int, db: Session = Depends(get_db)):
-#    RepartoDiaService.delete(db, id_repartodia=id_repartodia)
-#---------
-#Desabilitado por ahora
-#@router.post("/{id_repartodia}/registrar-cobro", response_model=RepartoDiaOut)
-#def registrar_cobro(id_repartodia: int, payload: RegistrarCobroIn, db: Session = Depends(get_db)):
-#    return RepartoDiaService.registrar_cobro(
-#        db,
-#        id_repartodia=id_repartodia,
-#        efectivo=payload.efectivo,
-#        virtual=payload.virtual,
-#    )

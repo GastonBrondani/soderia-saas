@@ -14,9 +14,6 @@ from app.features.catalogo.listas_precios.schemas.lista_de_precios import ListaD
 from app.features.catalogo.listas_precios.services.lista_precio import (
     crear_lista as svc_crear_lista,
     listar_listas as svc_listar_listas,
-    # obtener_lista as svc_obtener_lista,
-    # actualizar_lista as svc_actualizar_lista,
-    # eliminar_lista as svc_eliminar_lista
 )
 from app.features.catalogo.listas_precios.schemas.lista_precio_combo import (
     LPCOut as LPCOutCombo,
@@ -28,7 +25,6 @@ from app.features.catalogo.listas_precios.schemas.lista_de_precios import (
 from app.features.catalogo.listas_precios.services.lista_precio import (
     obtener_lista as svc_obtener_lista,
     actualizar_lista as svc_actualizar_lista,
-    # eliminar_lista as svc_eliminar_lista
 )
 from app.features.catalogo.combos.schemas.combo import ComboConPrecioOut
 from app.features.catalogo.listas_precios.services.lista_precio_combo import (
@@ -49,17 +45,6 @@ from app.features.catalogo.listas_precios.services.lista_precio_servicio import 
 )
 
 router = APIRouter(prefix="/listas-precios", tags=["ListaDePrecios"],dependencies=[Depends(get_current_user)],)
-
-
-""" @router.get("/{id_lista}/precios", response_model=List[LPPBasicOut])
-def listar_precios_de_lista(
-    id_lista: int,
-    db: Session = Depends(get_db),
-    include_producto: bool = Query(
-        True, description="Incluye nombre del producto (optimiza para UI)"
-    ),
-):
-    return svc_listar_precios_de_lista(db, id_lista, include_producto) """
 
 
 @router.put(
@@ -111,17 +96,6 @@ def eliminar_lista(id_lista: int, db: Session = Depends(get_db)):
     return svc_actualizar_lista(db, id_lista, payload)
 
 
-""" @router.get("/{id_lista}/precios-combos", response_model=List[LPCBasicOutCombo])
-def listar_precios_de_lista_combos(
-    id_lista: int,
-    db: Session = Depends(get_db),
-    include_combo: bool = Query(
-        True, description="Incluye nombre del combo (optimiza para UI)"
-    ),
-):
-    return svc_listar_precios_de_lista_combo(db, id_lista, include_combo) """
-
-
 # Actualizar o insertar precio de combo en lista de precios. ACA ES DONDE ASIGNO UN COMBO A UNA LISTA.
 @router.put(
     "/{id_lista}/precios-combos/{id_combo}", response_model=LPCOutCombo
@@ -170,23 +144,6 @@ def upsert_precio_servicio(
     payload.id_lista = id_lista
     payload.id_cliente_servicio = id_cliente_servicio
     return svc_upsert_precio_servicio(db, id_lista, payload)
-
-
-""" @router.put("/{id_lista}/precios/{tipo}/{id_item}", response_model=PrecioItemOut)
-def upsert_precio_global(
-    id_lista: int,
-    tipo: TipoItemPrecio,  # "producto" | "combo"
-    id_item: int,
-    payload: PrecioItemUpsert,
-    db: Session = Depends(get_db),
-):
-    return svc_upsert_precio_item(
-        db,
-        id_lista=id_lista,
-        tipo=tipo,
-        id_item=id_item,
-        precio=payload.precio,
-    ) """
 
 
 # Con este get, listo productos y combos con su precio, usar este.
