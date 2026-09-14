@@ -1,8 +1,8 @@
-from sqlalchemy import func, select, delete, update
+from sqlalchemy import and_, func, select, update
 from sqlalchemy.orm import Session, joinedload, selectinload
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional
 
-from app.core.exceptions import AppError, NotFound
+from app.core.exceptions import AppError, Conflict, NotFound, ValidationFailed
 
 
 #Modelos utilizados
@@ -12,18 +12,440 @@ from app.features.clientes.models.direccion_cliente import DireccionCliente
 from app.features.clientes.models.telefono_cliente import TelefonoCliente
 from app.features.clientes.models.email_cliente import MailCliente
 from app.features.clientes.models.cliente_cuenta import ClienteCuenta
+from app.features.clientes.models.producto_cliente import ProductoCliente
 from app.features.repartos.agenda.models.cliente_dia_semana import ClienteDiaSemana
+from app.features.maestros.models.dia_semana import DiaSemana
+from app.features.catalogo.productos.models.producto import Producto
+from app.features.auditoria.models.historico import Historico
+from app.features.pedidos.models.pedido import Pedido
 
 #Schemas utilizados
+from app.features.clientes.schemas.cliente import ClienteCreate, ClienteUpdate
 from app.features.clientes.schemas.cliente_detalle import ClienteDetalleOut, ClienteDetalleUpdate
+from app.features.clientes.schemas.cliente_cuenta import ClienteCuentaCreate
+from app.features.clientes.schemas.producto_cliente import (
+    ProductoClienteOut,
+    ProductoClienteUpsert,
+    ProductoClientePatch,
+)
+from app.features.auditoria.schemas.historico import HistoricoOut
+from app.features.pedidos.schemas.pedido import PedidoOutCorto
 
 #Utilizados para guardar un historico del cliente
 from app.features.auditoria.service import registrar_evento_cliente
 from app.features.auditoria.schemas.enums_historico import TipoEventoCodigoEnum
 
 
+def _idx_dias(db: Session) -> Dict[str, int]:
+    """Devuelve {'lun': id_dia, ...} en base a tabla dia_semana."""
+    dias_db = db.execute(select(DiaSemana)).scalars().all()
+    idx: Dict[str, int] = {}
+    for d in dias_db:
+        nombre = (d.nombre_dia or "").strip().lower()
+        if nombre.startswith("lu"):
+            idx["lun"] = d.id_dia
+        elif nombre.startswith("ma") and "r" in nombre:
+            idx["mar"] = d.id_dia
+        elif nombre.startswith("mi"):
+            idx["mie"] = d.id_dia
+        elif nombre.startswith("ju"):
+            idx["jue"] = d.id_dia
+        elif nombre.startswith("vi"):
+            idx["vie"] = d.id_dia
+        elif nombre.startswith("sa"):
+            idx["sab"] = d.id_dia
+        elif nombre.startswith("do"):
+            idx["dom"] = d.id_dia
+    return idx
+
+
+def _calcular_orden_y_correr(
+    db: Session,
+    id_dia: int,
+    turno_val: Optional[str],
+    posicion: str,
+    despues_de_legajo: Optional[int] = None,
+) -> int:
+    """
+    Devuelve el orden a asignar al nuevo registro y corre los existentes de ser necesario.
+    Bloquea el conjunto (día/turno) para evitar carreras.
+    """
+    filtro_base = and_(
+        ClienteDiaSemana.id_dia == id_dia,
+        (
+            ClienteDiaSemana.turno_visita.is_(None)
+            if turno_val is None
+            else ClienteDiaSemana.turno_visita == turno_val
+        ),
+    )
+
+    # Lock del set afectado
+    db.execute(select(ClienteDiaSemana.id_cliente).where(filtro_base).with_for_update())
+
+    if posicion == "inicio":
+        db.execute(
+            update(ClienteDiaSemana)
+            .where(filtro_base)
+            .values(orden=func.coalesce(ClienteDiaSemana.orden, 0) + 1)
+        )
+        return 1
+
+    if posicion == "final":
+        max_orden = db.execute(
+            select(func.coalesce(func.max(ClienteDiaSemana.orden), 0)).where(
+                filtro_base
+            )
+        ).scalar_one()
+        return max_orden + 1
+
+    # posicion == "despues"
+    if not despues_de_legajo:
+        raise AppError("Falta 'despues_de_legajo' para posicion='despues'.")
+
+    ref_orden = db.execute(
+        select(ClienteDiaSemana.orden).where(
+            and_(filtro_base, ClienteDiaSemana.id_cliente == despues_de_legajo)
+        )
+    ).scalar_one_or_none()
+
+    if ref_orden is None:
+        raise NotFound("Cliente de referencia no existe en ese día/turno.")
+
+    db.execute(
+        update(ClienteDiaSemana)
+        .where(
+            and_(
+                filtro_base,
+                ClienteDiaSemana.orden >= ref_orden + 1,
+            )
+        )
+        .values(orden=ClienteDiaSemana.orden + 1)
+    )
+
+    return ref_orden + 1
+
+
+def _get_producto_cliente_con_producto(db: Session, legajo: int, id_producto: int) -> ProductoCliente:
+    """Recarga el producto_cliente con la relación producto (para el response)."""
+    return db.execute(
+        select(ProductoCliente)
+        .where(
+            ProductoCliente.legajo == legajo,
+            ProductoCliente.id_producto == id_producto,
+        )
+        .options(joinedload(ProductoCliente.producto))
+    ).scalar_one()
+
+
 
 class ClienteService:
+
+    @staticmethod
+    def crear_cliente(db: Session, payload: ClienteCreate) -> ClienteDetalleOut:
+        try:
+            # 1) DNI / Persona
+            dni_final = payload.persona.dni if payload.persona else payload.dni
+            persona = db.get(Persona, dni_final)
+
+            if payload.persona:
+                if not persona:
+                    persona = Persona(**payload.persona.model_dump())
+                    db.add(persona)
+                    db.flush()
+            else:
+                if not persona:
+                    raise NotFound(
+                        "La persona (dni) no existe. Enviá 'persona' para crearla.",
+                    )
+
+            # 2) Duplicado por empresa
+            existe = (
+                db.query(Cliente)
+                .filter(and_(Cliente.dni == dni_final, Cliente.id_empresa == 1))
+                .first()
+            )
+            if existe:
+                raise Conflict("Ya existe un cliente para ese DNI en esta empresa.")
+
+            # 3) Crear cliente
+            nuevo = Cliente(id_empresa=1, observacion=payload.observacion)
+            nuevo.persona = persona
+            db.add(nuevo)
+            db.flush()  # genera legajo
+
+            # 4) Hijos anidados
+            if payload.direcciones:
+                db.add_all(
+                    [
+                        DireccionCliente(
+                            legajo=nuevo.legajo,
+                            direccion=d.direccion,
+                            entre_calle1=d.entre_calle1,
+                            entre_calle2=d.entre_calle2,
+                            zona=d.zona,
+                        )
+                        for d in payload.direcciones
+                    ]
+                )
+
+            if payload.telefonos:
+                db.add_all(
+                    [
+                        TelefonoCliente(legajo=nuevo.legajo, nro_telefono=t.nro_telefono)
+                        for t in payload.telefonos
+                    ]
+                )
+
+            if payload.emails:
+                db.add_all(
+                    [MailCliente(legajo=nuevo.legajo, mail=e.mail) for e in payload.emails]
+                )
+
+            # 5) Días + turno → cliente_dia_semana (con ORDEN)
+            registros: List[ClienteDiaSemana] = []
+            idx = _idx_dias(db)
+
+            if payload.frecuencias and len(payload.frecuencias) > 0:
+                # Versión rica por día
+                for f in payload.frecuencias:
+                    id_dia = idx.get(f.dia.value)
+                    if not id_dia:
+                        raise AppError(f"Día no encontrado: {f.dia.value}")
+
+                    turno_val = f.turno.value if hasattr(f.turno, "value") else f.turno
+                    posicion_val = (
+                        f.posicion.value
+                        if hasattr(f.posicion, "value")
+                        else str(f.posicion)
+                    )
+
+                    orden_nuevo = _calcular_orden_y_correr(
+                        db=db,
+                        id_dia=id_dia,
+                        turno_val=turno_val,
+                        posicion=posicion_val,
+                        despues_de_legajo=f.despues_de_legajo,
+                    )
+
+                    registros.append(
+                        ClienteDiaSemana(
+                            id_cliente=nuevo.legajo,
+                            id_dia=id_dia,
+                            turno_visita=turno_val,
+                            orden=orden_nuevo,
+                        )
+                    )
+            elif payload.dias_visita:
+                # Compatibilidad: solo 'dias_visita' (+ opcional turno_visita) -> agrega al final
+                turno_val = (
+                    payload.turno_visita.value
+                    if hasattr(payload.turno_visita, "value")
+                    else payload.turno_visita
+                )
+                for dia in dict.fromkeys(payload.dias_visita):  # únicos, en orden
+                    id_dia = idx.get(dia.value)
+                    if not id_dia:
+                        raise AppError(f"Día no encontrado: {dia.value}")
+
+                    orden_nuevo = _calcular_orden_y_correr(
+                        db=db,
+                        id_dia=id_dia,
+                        turno_val=turno_val,
+                        posicion="final",
+                    )
+                    registros.append(
+                        ClienteDiaSemana(
+                            id_cliente=nuevo.legajo,
+                            id_dia=id_dia,
+                            turno_visita=turno_val,
+                            orden=orden_nuevo,
+                        )
+                    )
+
+            if registros:
+                db.add_all(registros)
+
+            # 6) Crear cuenta por defecto para el cliente
+            #    Usa los defaults del schema: saldo=0, deuda=0, numero_bidones=0
+            cuenta_payload = ClienteCuentaCreate()
+            cuenta_data = cuenta_payload.model_dump(exclude_unset=True)
+            cuenta = ClienteCuenta(legajo=nuevo.legajo, **cuenta_data)
+            db.add(cuenta)
+
+            # 7) Commit y retorno
+            db.commit()
+            db.refresh(cuenta)
+
+            return ClienteService.get_detalle_cliente(db, nuevo.legajo)
+
+        except AppError:
+            raise
+        except Exception:
+            db.rollback()
+            raise
+
+    @staticmethod
+    def listar_clientes(db: Session) -> List[Cliente]:
+        return (
+            db.query(Cliente)
+            .options(
+                selectinload(Cliente.persona),
+                selectinload(Cliente.telefonos),
+            )
+            .filter(Cliente.id_empresa == 1)
+            .all()
+        )
+
+    @staticmethod
+    def actualizar_cliente(db: Session, legajo: int, payload: ClienteUpdate) -> Cliente:
+        try:
+            cliente = db.get(Cliente, legajo)
+            if not cliente:
+                raise NotFound("Cliente no encontrado")
+
+            # dump parcial, EXCLUYENDO id_empresa para que jamás lo toquemos
+            data_cliente = payload.model_dump(exclude_unset=True, exclude={"id_empresa"})
+            persona_patch = data_cliente.pop("persona", None)
+
+            # setear solo campos con valor NO None (evita overwrites a NULL)
+            for campo, valor in data_cliente.items():
+                if valor is not None:
+                    setattr(cliente, campo, valor)
+
+            if persona_patch:
+                persona = db.get(Persona, cliente.dni)
+                if not persona:
+                    raise Conflict("Inconsistencia: el cliente no tiene persona asociada.")
+                for campo, valor in persona_patch.items():
+                    if valor is not None:
+                        setattr(persona, campo, valor)
+
+            db.commit()
+            # asegurar persona en salida
+            cliente = (
+                db.query(Cliente)
+                .options(selectinload(Cliente.persona))
+                .filter(Cliente.legajo == legajo)
+                .first()
+            )
+            return cliente
+
+        except AppError:
+            raise
+        except Exception:
+            db.rollback()
+            raise
+
+    @staticmethod
+    def eliminar_cliente(db: Session, legajo: int) -> None:
+        try:
+            cliente = db.get(Cliente, legajo)
+            if not cliente:
+                raise NotFound("Cliente no encontrado")
+            db.delete(cliente)
+            db.commit()
+        except NotFound:
+            raise
+        except Exception as e:
+            db.rollback()
+            # Si hay FKs (pedidos, usuarios, etc.) puede fallar por restricción
+            raise Conflict(f"No se pudo eliminar el cliente (referencias activas): {e}")
+
+    @staticmethod
+    def listar_historico_cliente(db: Session, legajo: int, limit: int) -> List[HistoricoOut]:
+        cliente = db.get(Cliente, legajo)
+        if not cliente:
+            raise NotFound("Cliente no encontrado")
+
+        stmt = (
+            select(Historico)
+            .where(Historico.legajo == legajo)
+            .order_by(Historico.fecha.desc())
+            .limit(limit)
+            .options(selectinload(Historico.tipo_evento))
+        )
+        rows = db.execute(stmt).scalars().all()
+        return [HistoricoOut.model_validate(h) for h in rows]
+
+    @staticmethod
+    def listar_pedidos_cliente(db: Session, legajo: int, limit: int) -> List[PedidoOutCorto]:
+        cliente = db.get(Cliente, legajo)
+        if not cliente:
+            raise NotFound("Cliente no encontrado")
+
+        stmt = (
+            select(Pedido)
+            .where(Pedido.legajo == legajo)
+            .order_by(Pedido.fecha.desc())
+            .limit(limit)
+        )
+        rows = db.execute(stmt).scalars().all()
+        return [PedidoOutCorto.model_validate(p) for p in rows]
+
+    @staticmethod
+    def listar_productos_cliente(db: Session, legajo: int) -> List[ProductoClienteOut]:
+        cliente = db.get(Cliente, legajo)
+        if not cliente:
+            raise NotFound("Cliente no encontrado")
+
+        stmt = (
+            select(ProductoCliente)
+            .where(ProductoCliente.legajo == legajo)
+            .options(joinedload(ProductoCliente.producto))
+        )
+        rows = db.execute(stmt).scalars().all()
+        return [ProductoClienteOut.model_validate(r) for r in rows]
+
+    @staticmethod
+    def upsert_producto_cliente(
+        db: Session, legajo: int, id_producto: int, payload: ProductoClienteUpsert
+    ) -> ProductoClienteOut:
+        """
+        Crea o reemplaza por completo el producto del cliente (PUT idempotente).
+        Si no existía la fila, la crea; si existía, sobreescribe todos los campos.
+        """
+        if not db.get(Cliente, legajo):
+            raise NotFound("Cliente no encontrado")
+        if not db.get(Producto, id_producto):
+            raise NotFound("Producto no encontrado")
+
+        fila = db.get(ProductoCliente, {"legajo": legajo, "id_producto": id_producto})
+        if fila is None:
+            fila = ProductoCliente(legajo=legajo, id_producto=id_producto)
+            db.add(fila)
+
+        fila.cantidad = payload.cantidad
+        fila.estado = payload.estado
+        fila.fecha_entrega = payload.fecha_entrega
+
+        db.commit()
+        return ProductoClienteOut.model_validate(
+            _get_producto_cliente_con_producto(db, legajo, id_producto)
+        )
+
+    @staticmethod
+    def actualizar_producto_cliente(
+        db: Session, legajo: int, id_producto: int, payload: ProductoClientePatch
+    ) -> ProductoClienteOut:
+        """
+        Actualiza parcialmente el producto del cliente (PATCH).
+        Solo modifica los campos enviados; la fila debe existir (404 si no).
+        """
+        fila = db.get(ProductoCliente, {"legajo": legajo, "id_producto": id_producto})
+        if fila is None:
+            raise NotFound("El cliente no tiene ese producto asignado.")
+
+        cambios = payload.model_dump(exclude_unset=True)
+        if not cambios:
+            raise ValidationFailed("No se enviaron campos para actualizar.")
+
+        for campo, valor in cambios.items():
+            setattr(fila, campo, valor)
+
+        db.commit()
+        return ProductoClienteOut.model_validate(
+            _get_producto_cliente_con_producto(db, legajo, id_producto)
+        )
 
     #Muestro todo lo detallado al cliente.
     @staticmethod
@@ -233,97 +655,6 @@ class ClienteService:
 
 
     
-# ================= ORDENAMIENTO =================
-
-def normalizar_orden(
-    db: Session,
-    *,
-    id_dia: int,
-    turno: Optional[str],
-):
-    filas = db.execute(
-        select(
-            ClienteDiaSemana.id_cliente
-        )
-        .where(
-            ClienteDiaSemana.id_dia == id_dia,
-            ClienteDiaSemana.turno_visita == turno,
-        )
-        .order_by(ClienteDiaSemana.orden)
-        .with_for_update()
-    ).scalars().all()
-
-    for idx, id_cliente in enumerate(filas, start=1):
-        db.execute(
-            update(ClienteDiaSemana)
-            .where(
-                ClienteDiaSemana.id_dia == id_dia,
-                ClienteDiaSemana.turno_visita == turno,
-                ClienteDiaSemana.id_cliente == id_cliente,
-            )
-            .values(orden=idx)
-        )
-
-    
-def calcular_orden(
-    db: Session,
-    *,
-    id_dia: int,
-    turno: Optional[str],
-    posicion: str,
-    despues_de_legajo: Optional[int],
-) -> int:
-
-    # 🔒 BLOQUEO + NORMALIZACIÓN
-    normalizar_orden(db, id_dia=id_dia, turno=turno)
-
-    if posicion == "inicio":
-        db.execute(
-            update(ClienteDiaSemana)
-            .where(
-                ClienteDiaSemana.id_dia == id_dia,
-                ClienteDiaSemana.turno_visita == turno,
-            )
-            .values(orden=ClienteDiaSemana.orden + 1)
-        )
-        return 1
-
-    if posicion == "despues":
-        if not despues_de_legajo:
-            raise AppError("Falta despues_de_legajo")
-
-        orden_ref = db.execute(
-            select(ClienteDiaSemana.orden)
-            .where(
-                ClienteDiaSemana.id_dia == id_dia,
-                ClienteDiaSemana.turno_visita == turno,
-                ClienteDiaSemana.id_cliente == despues_de_legajo,
-            )
-            .with_for_update()
-        ).scalar_one()
-
-        db.execute(
-            update(ClienteDiaSemana)
-            .where(
-                ClienteDiaSemana.id_dia == id_dia,
-                ClienteDiaSemana.turno_visita == turno,
-                ClienteDiaSemana.orden > orden_ref,
-            )
-            .values(orden=ClienteDiaSemana.orden + 1)
-        )
-
-        return orden_ref + 1
-
-    # final
-    max_orden = db.execute(
-        select(func.coalesce(func.max(ClienteDiaSemana.orden), 0))
-        .where(
-            ClienteDiaSemana.id_dia == id_dia,
-            ClienteDiaSemana.turno_visita == turno,
-        )
-    ).scalar_one()
-
-    return max_orden + 1
 
 
 

@@ -326,18 +326,41 @@ en el contrato. Sin autenticación: `POST /auth/login`, `POST /auth/token`,
   `catalogo/combos`, `catalogo/listas_precios` (5 archivos),
   `catalogo/servicios`, `clientes/service.py`, `inventario/envases`,
   `inventario/stock`, `pagos/services/pago.py`, `repartos/repartos_dia`
-  (2 archivos), y ~~`pedidos/service.py`~~ (44 usos en 793 líneas, se hizo
-  en una pasada aparte el mismo día por el tamaño). **Pendiente:**
-  - **16 routers** (no services) que también levantan `HTTPException`
-    directo, 56 usos en total. El más grande es
-    `clientes/routers/cliente.py` (19 usos, 560 líneas, con lógica de
-    negocio mezclada — necesitaría el mismo tratamiento que
-    persona/camión/empleado, no solo el cambio de excepción). Los otros:
-    `auditoria`, `auth`, `documentos`, `pagos` (router), `pedidos` (router),
-    `usuarios`, `clientes/routers/{cliente_cuenta,direccion_cliente,
-    email_cliente,telefono_cliente}`, `maestros/routers/medio_pago`,
-    `catalogo/productos`, `inventario/stock` (router),
-    `repartos/recorridos`, `repartos/visitas`.
+  (2 archivos), y `pedidos/service.py` (44 usos en 793 líneas, se hizo en
+  una pasada aparte el mismo día por el tamaño). Con esto, **toda la capa
+  de service quedó migrada.**
+  - Los **16 routers** (no services) que también levantaban
+    `HTTPException` directo (56 usos en total) también se migraron el
+    mismo día:
+    - Los 15 chicos (`auditoria`, `auth`, `documentos`, `pagos` router,
+      `pedidos` router, `usuarios`, `maestros/medio_pago`,
+      `catalogo/productos`, `inventario/stock` router,
+      `repartos/recorridos`, `repartos/visitas`,
+      `clientes/routers/{cliente_cuenta,direccion_cliente,email_cliente,
+      telefono_cliente}`): solo cambio de excepción, mismos status codes.
+      De paso, `auth.py` gana el header `WWW-Authenticate: Bearer` en el
+      401 (lo agrega el handler global, el `HTTPException` viejo no lo
+      ponía). Se encontró y arregló una regresión real: en
+      `repartos/visitas/router.py` un `except HTTPException` que envolvía
+      la llamada a `EnvaseClienteService.registrar_movimiento` ya no
+      atrapaba nada desde que ese service se migró a errores de dominio
+      antes en esta misma sesión — el rollback explícito dejaba de
+      ejecutarse (lo tapaba el rollback implícito de `Session.close()`,
+      por eso no se notó antes).
+    - `clientes/routers/cliente.py` (560 líneas, 19 usos, lógica de
+      negocio mezclada) recibió el tratamiento completo: toda la lógica
+      (`CrearCliente`, `ActualizarCliente`, `BorrarCliente`,
+      históricos/pedidos/productos del cliente, `_idx_dias`,
+      `_calcular_orden_y_correr`) se movió a `ClienteService` en
+      `clientes/service.py`. De paso se encontró que ese archivo **ya
+      tenía** una implementación de ordenamiento (`calcular_orden`/
+      `normalizar_orden`) que **nadie llamaba** — un algoritmo distinto y
+      muerto conviviendo con el que el router realmente usaba. Se borró
+      la muerta y quedó una sola (`_calcular_orden_y_correr`, la que
+      corría de verdad). Probado en vivo de punta a punta: alta de
+      cliente con persona nueva + frecuencias (día/turno/orden) + cuenta
+      automática, duplicado (409), actualizar (200), producto
+      inexistente (404), baja (204).
 - ~~Hay bloques grandes de código comentado en `repartoDia.py`,
   `clienteDiaSemana.py`, `listaPrecios.py` y `pago.py`.~~ **Borrados en el
   paso 3 (2026-09-14).** Junto con imports que solo usaban esos bloques
