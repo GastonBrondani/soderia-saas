@@ -326,10 +326,8 @@ en el contrato. Sin autenticación: `POST /auth/login`, `POST /auth/token`,
   `catalogo/combos`, `catalogo/listas_precios` (5 archivos),
   `catalogo/servicios`, `clientes/service.py`, `inventario/envases`,
   `inventario/stock`, `pagos/services/pago.py`, `repartos/repartos_dia`
-  (2 archivos). **Pendiente:**
-  - `pedidos/service.py`: ~44 usos de `HTTPException` en 793 líneas, mucho
-    más grande que el resto — se dejó aparte a propósito, para encararlo
-    con más tiempo.
+  (2 archivos), y ~~`pedidos/service.py`~~ (44 usos en 793 líneas, se hizo
+  en una pasada aparte el mismo día por el tamaño). **Pendiente:**
   - **16 routers** (no services) que también levantan `HTTPException`
     directo, 56 usos en total. El más grande es
     `clientes/routers/cliente.py` (19 usos, 560 líneas, con lógica de

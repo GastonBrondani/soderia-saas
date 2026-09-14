@@ -2,9 +2,9 @@ from decimal import Decimal, ROUND_HALF_UP
 from sqlalchemy import select, cast, Date
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from fastapi import HTTPException
 from datetime import date, datetime
 
+from app.core.exceptions import AppError, BusinessRuleViolation, Conflict, NotFound
 from app.features.pagos.models.pago import Pago
 from app.features.pedidos.models.pedido import Pedido
 from app.features.clientes.models.cliente_cuenta import ClienteCuenta
@@ -64,16 +64,14 @@ def _bucket_medio_pago(nombre: str) -> str:
         "mercadopago",
     }:
         return "virtual"
-    raise HTTPException(status_code=400, detail=f"medio_pago no soportado: {nombre!r}")
+    raise AppError(f"medio_pago no soportado: {nombre!r}")
 
 
 # helper: aplicar el CARGO del pedido a la cuenta (sin pago)
 def _aplicar_compra_a_cuenta(cuenta: ClienteCuenta, total: Decimal) -> None:
     total = _q2(total)
     if total < 0:
-        raise HTTPException(
-            status_code=400, detail="monto_total no puede ser negativo."
-        )
+        raise AppError("monto_total no puede ser negativo.")
 
     deuda = _q2(cuenta.deuda or Decimal("0"))
     saldo = _q2(cuenta.saldo or Decimal("0"))
@@ -103,24 +101,18 @@ class PedidoService:
                 select(Pedido).where(Pedido.id_pedido == id_pedido).with_for_update()
             ).scalar_one_or_none()
             if ped is None:
-                raise HTTPException(status_code=404, detail="Pedido no encontrado")
+                raise NotFound("Pedido no encontrado")
 
             if ped.id_medio_pago is None:
-                raise HTTPException(
-                    status_code=400, detail="El pedido no tiene medio de pago"
-                )
+                raise AppError("El pedido no tiene medio de pago")
 
             # Regla 1: el pedido ya nace con reparto
             if ped.id_repartodia is None:
-                raise HTTPException(
-                    status_code=400,
-                    detail="El pedido no tiene id_repartodia asignado.",
-                )
+                raise AppError("El pedido no tiene id_repartodia asignado.")
 
             if ped.id_repartodia != data.id_repartodia:
-                raise HTTPException(
-                    status_code=409,
-                    detail="El reparto enviado no coincide con el reparto del pedido.",
+                raise Conflict(
+                    "El reparto enviado no coincide con el reparto del pedido.",
                 )
             # Idempotencia de confirmación: si este pedido ya fue confirmado
             # (existe movimiento de stock o pago asociado), no re-aplicamos nada.
@@ -144,14 +136,9 @@ class PedidoService:
             abonado = _q2(ped.monto_abonado or Decimal("0"))
 
             if total <= 0:
-                raise HTTPException(
-                    status_code=400,
-                    detail="El pedido no tiene monto_total válido (> 0).",
-                )
+                raise AppError("El pedido no tiene monto_total válido (> 0).")
             if abonado < 0:
-                raise HTTPException(
-                    status_code=400, detail="monto_abonado no puede ser negativo."
-                )
+                raise AppError("monto_abonado no puede ser negativo.")
 
             # 2) Bloquear cuenta
             id_cuenta = getattr(ped, "id_cuenta", None)
@@ -167,13 +154,10 @@ class PedidoService:
                     .all()
                 )
                 if not ids:
-                    raise HTTPException(
-                        status_code=409, detail="El cliente no tiene cuenta creada."
-                    )
+                    raise Conflict("El cliente no tiene cuenta creada.")
                 if len(ids) > 1:
-                    raise HTTPException(
-                        status_code=400,
-                        detail="Pedido sin id_cuenta y cliente con múltiples cuentas. No se puede confirmar.",
+                    raise AppError(
+                        "Pedido sin id_cuenta y cliente con múltiples cuentas. No se puede confirmar.",
                     )
                 id_cuenta = ids[0]
                 ped.id_cuenta = id_cuenta
@@ -187,9 +171,7 @@ class PedidoService:
                 .with_for_update()
             ).scalar_one_or_none()
             if cuenta is None:
-                raise HTTPException(
-                    status_code=404, detail="Cuenta no encontrada para ese cliente."
-                )
+                raise NotFound("Cuenta no encontrada para ese cliente.")
 
             saldo_antes = _q2(cuenta.saldo or Decimal("0"))
 
@@ -200,19 +182,14 @@ class PedidoService:
                 .with_for_update()
             ).scalar_one_or_none()
             if rep is None:
-                raise HTTPException(
-                    status_code=404, detail="Reparto del día no encontrado"
-                )
+                raise NotFound("Reparto del día no encontrado")
 
             if (
                 hasattr(rep, "id_empresa")
                 and hasattr(ped, "id_empresa")
                 and rep.id_empresa != ped.id_empresa
             ):
-                raise HTTPException(
-                    status_code=409,
-                    detail="El pedido y el reparto pertenecen a empresas distintas",
-                )
+                raise Conflict("El pedido y el reparto pertenecen a empresas distintas")
 
             # 4) STOCK + MovimientoStock
             items = (
@@ -229,10 +206,7 @@ class PedidoService:
                 select(MovimientoStock).where(MovimientoStock.id_pedido == ped.id_pedido)
             ).first()
             if ya_mov:
-                raise HTTPException(
-                    status_code=409,
-                    detail="Ya existen movimientos de stock para este pedido.",
-                )
+                raise Conflict("Ya existen movimientos de stock para este pedido.")
 
             fecha_mov = getattr(ped, "fecha", None) or now
 
@@ -240,10 +214,7 @@ class PedidoService:
                 if it.id_producto is not None:
                     prod = db.get(Producto, it.id_producto)
                     if prod is None:
-                        raise HTTPException(
-                            status_code=400,
-                            detail=f"Producto {it.id_producto} inexistente.",
-                        )
+                        raise AppError(f"Producto {it.id_producto} inexistente.")
 
                     if not prod.descuenta_stock:
                         continue
@@ -260,15 +231,13 @@ class PedidoService:
                     ).scalar_one_or_none()
 
                     if stock_row is None:
-                        raise HTTPException(
-                            status_code=409,
-                            detail=f"No hay stock para producto {it.id_producto}.",
+                        raise BusinessRuleViolation(
+                            f"No hay stock para producto {it.id_producto}.",
                         )
 
                     if stock_row.cantidad < cantidad:
-                        raise HTTPException(
-                            status_code=409,
-                            detail=f"Stock insuficiente producto {it.id_producto}.",
+                        raise BusinessRuleViolation(
+                            f"Stock insuficiente producto {it.id_producto}.",
                         )
 
                     stock_row.cantidad -= cantidad
@@ -296,17 +265,13 @@ class PedidoService:
                     )
 
                     if not combo_items:
-                        raise HTTPException(
-                            status_code=400,
-                            detail=f"Combo {it.id_combo} no tiene productos.",
-                        )
+                        raise AppError(f"Combo {it.id_combo} no tiene productos.")
 
                     for cp in combo_items:
                         prod = db.get(Producto, cp.id_producto)
                         if prod is None:
-                            raise HTTPException(
-                                status_code=400,
-                                detail=f"Producto {cp.id_producto} del combo inexistente.",
+                            raise AppError(
+                                f"Producto {cp.id_producto} del combo inexistente.",
                             )
 
                         if not prod.descuenta_stock:
@@ -324,15 +289,13 @@ class PedidoService:
                         ).scalar_one_or_none()
 
                         if stock_row is None:
-                            raise HTTPException(
-                                status_code=409,
-                                detail=f"No hay stock para producto {cp.id_producto}.",
+                            raise BusinessRuleViolation(
+                                f"No hay stock para producto {cp.id_producto}.",
                             )
 
                         if stock_row.cantidad < cantidad:
-                            raise HTTPException(
-                                status_code=409,
-                                detail=f"Stock insuficiente producto {cp.id_producto}.",
+                            raise BusinessRuleViolation(
+                                f"Stock insuficiente producto {cp.id_producto}.",
                             )
 
                         stock_row.cantidad -= cantidad
@@ -371,10 +334,7 @@ class PedidoService:
                     select(Pago.id_pago).where(Pago.id_pedido == ped.id_pedido)
                 ).first()
                 if ya_pago:
-                    raise HTTPException(
-                        status_code=409,
-                        detail="Ya existe un pago registrado para este pedido.",
-                    )
+                    raise Conflict("Ya existe un pago registrado para este pedido.")
 
                 PagoService.crear(
                     db,
@@ -459,33 +419,24 @@ class PedidoService:
 
             return PedidoOut.model_validate(ped)
 
-        except HTTPException:
+        except AppError:
             db.rollback()
             raise
         except SQLAlchemyError as e:
             db.rollback()
             print("ERROR SQL confirmar_pedido:", repr(e))
-            raise HTTPException(
-                status_code=500,
-                detail=str(e),
-            )
+            raise
 
     @staticmethod
     def Listar_pedidos_por_Fecha(db: Session, fecha: date) -> list[PedidoOut]:
-        try:
-            pedidos = (
-                db.execute(select(Pedido).where(cast(Pedido.fecha, Date) == fecha))
-                .scalars()
-                .all()
-            )
-        except SQLAlchemyError:
-            raise HTTPException(status_code=500, detail="Error al consultar pedidos.")
+        pedidos = (
+            db.execute(select(Pedido).where(cast(Pedido.fecha, Date) == fecha))
+            .scalars()
+            .all()
+        )
 
         if not pedidos:
-            raise HTTPException(
-                status_code=404,
-                detail=f"No hay pedidos para la fecha {fecha.isoformat()}",
-            )
+            raise NotFound(f"No hay pedidos para la fecha {fecha.isoformat()}")
 
         return [PedidoOut.model_validate(p) for p in pedidos]
 
@@ -515,9 +466,7 @@ class PedidoService:
                 )
             ).scalar_one_or_none()
             if mp is None:
-                raise HTTPException(
-                    status_code=400, detail="id_medio_pago inexistente."
-                )
+                raise AppError("id_medio_pago inexistente.")
 
             # 2) Validar reparto
             rep = db.execute(
@@ -526,9 +475,7 @@ class PedidoService:
                 )
             ).scalar_one_or_none()
             if rep is None:
-                raise HTTPException(
-                    status_code=404, detail="Reparto del día no encontrado."
-                )
+                raise NotFound("Reparto del día no encontrado.")
 
             # 3) Resolver cuenta
             id_cuenta = getattr(pedido_create, "id_cuenta", None)
@@ -543,23 +490,17 @@ class PedidoService:
             )
 
             if not ids:
-                raise HTTPException(
-                    status_code=409, detail="El cliente no tiene cuenta creada."
-                )
+                raise Conflict("El cliente no tiene cuenta creada.")
 
             if id_cuenta is None:
                 if len(ids) > 1:
-                    raise HTTPException(
-                        status_code=400,
-                        detail="El cliente tiene más de una cuenta. Enviar id_cuenta.",
+                    raise AppError(
+                        "El cliente tiene más de una cuenta. Enviar id_cuenta.",
                     )
                 id_cuenta = ids[0]
             else:
                 if id_cuenta not in ids:
-                    raise HTTPException(
-                        status_code=404,
-                        detail="Cuenta no encontrada para ese cliente.",
-                    )
+                    raise NotFound("Cuenta no encontrada para ese cliente.")
 
             # 4) Estado inicial
             estado_inicial = EstadoPedido.pendiente
@@ -601,10 +542,7 @@ class PedidoService:
                 if item.id_producto:
                     prod = db.get(Producto, item.id_producto)
                     if not prod:
-                        raise HTTPException(
-                            status_code=400,
-                            detail=f"Producto {item.id_producto} inexistente.",
-                        )
+                        raise AppError(f"Producto {item.id_producto} inexistente.")
                     db.add(
                         PedidoProducto(
                             id_pedido=nuevo.id_pedido,
@@ -629,9 +567,8 @@ class PedidoService:
             # 7) Validar total
             total_calculado = _q2(total_calculado)
             if total_calculado != total:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"monto_total ({total}) no coincide con items+servicios ({total_calculado}).",
+                raise AppError(
+                    f"monto_total ({total}) no coincide con items+servicios ({total_calculado}).",
                 )
 
             try:
@@ -656,7 +593,7 @@ class PedidoService:
 
             return PedidoOut.model_validate(nuevo), True
 
-        except HTTPException:
+        except AppError:
             db.rollback()
             raise
         except IntegrityError as e:
@@ -670,20 +607,17 @@ class PedidoService:
             if existente is not None:
                 return PedidoOut.model_validate(existente), False
             print("ERROR SQL crear_pedido:", repr(e))
-            raise HTTPException(status_code=500, detail=str(e))
+            raise
         except SQLAlchemyError as e:
             db.rollback()
             print("ERROR SQL crear_pedido:", repr(e))
-            raise HTTPException(
-                status_code=500,
-                detail=str(e),
-            )
+            raise
 
     @staticmethod
     def cancelar_deuda(db: Session, data: PedidoCancelarDeudaIn) -> ClienteCuentaOut:
         monto = _q2(data.monto)
         if monto <= Decimal("0"):
-            raise HTTPException(status_code=400, detail="El monto debe ser mayor a 0.")
+            raise AppError("El monto debe ser mayor a 0.")
 
         try:
             with db.begin():
@@ -694,9 +628,7 @@ class PedidoService:
                     )
                 ).scalar_one_or_none()
                 if mp is None:
-                    raise HTTPException(
-                        status_code=400, detail="id_medio_pago inexistente."
-                    )
+                    raise AppError("id_medio_pago inexistente.")
 
                 # 2) Traer y bloquear reparto_dia (para obtener empresa + evitar carreras)
                 rep = db.execute(
@@ -705,9 +637,7 @@ class PedidoService:
                     .with_for_update()
                 ).scalar_one_or_none()
                 if rep is None:
-                    raise HTTPException(
-                        status_code=404, detail="Reparto del día no encontrado"
-                    )
+                    raise NotFound("Reparto del día no encontrado")
 
                 # 3) ✅ Crear PAGO (esto debe:
                 #    - crear pago
@@ -717,10 +647,7 @@ class PedidoService:
                 id_empresa = getattr(rep, "id_empresa", None)
                 if id_empresa is None:
                     # Si tu RepartoDia no tiene id_empresa, agregá id_empresa al schema y usá data.id_empresa acá.
-                    raise HTTPException(
-                        status_code=400,
-                        detail="No se pudo resolver id_empresa para el pago.",
-                    )
+                    raise AppError("No se pudo resolver id_empresa para el pago.")
 
                 PagoService.crear(
                     db,
@@ -754,9 +681,7 @@ class PedidoService:
                 )
 
                 if cuenta is None:
-                    raise HTTPException(
-                        status_code=409, detail="El cliente no tiene cuenta creada."
-                    )
+                    raise Conflict("El cliente no tiene cuenta creada.")
 
                 try:
                     registrar_evento_cliente(
@@ -784,10 +709,8 @@ class PedidoService:
                 db.flush()
                 return ClienteCuentaOut.model_validate(cuenta)
 
-        except HTTPException:
+        except AppError:
             raise
         except SQLAlchemyError:
             db.rollback()
-            raise HTTPException(
-                status_code=500, detail="Error interno al cancelar la deuda."
-            )
+            raise
