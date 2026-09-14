@@ -2,8 +2,8 @@ from datetime import datetime, timezone
 from typing import Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import select
-from fastapi import HTTPException
 
+from app.core.exceptions import AppError, BusinessRuleViolation
 from app.features.inventario.stock.models.stock import Stock
 from app.features.inventario.movimientos.models.movimiento_stock import MovimientoStock
 from app.features.inventario.movimientos.schemas.enums_stock import TipoMovimiento
@@ -13,7 +13,7 @@ class StockService:
     @staticmethod
     def set_stock(db: Session, id_producto: int, id_empresa: int, cantidad: int) -> Stock:
         if cantidad < 0:
-            raise HTTPException(status_code=400, detail="La cantidad no puede ser negativa.")
+            raise AppError("La cantidad no puede ser negativa.")
         stmt = select(Stock).where(
             Stock.id_producto == id_producto,
             Stock.id_empresa == id_empresa
@@ -75,7 +75,7 @@ class StockService:
 
         nueva = entity.cantidad + delta
         if nueva < 0:
-            raise HTTPException(status_code=409, detail="El stock resultante no puede ser negativo.")
+            raise BusinessRuleViolation("El stock resultante no puede ser negativo.")
 
         entity.cantidad = nueva
         StockService._add_movimiento(
