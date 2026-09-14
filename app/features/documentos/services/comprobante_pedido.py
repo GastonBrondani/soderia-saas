@@ -1,4 +1,3 @@
-import os
 from datetime import datetime
 from decimal import Decimal
 
@@ -6,14 +5,11 @@ from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.settings import COMPROBANTES_BASE_PATH, COMPROBANTES_BASE_URL
+from app.core.storage import CATEGORIA_COMPROBANTES_PEDIDOS, get_storage
 from app.features.documentos.models.documentos import Documentos
 from app.features.pedidos.models.pedido import Pedido
 from app.features.maestros.models.medio_pago import MedioPago
 from app.utils.pdf.comprobante_pedido import generar_comprobante_pedido_pdf
-
-DEFAULT_BASE_PATH = "/data/comprobantes/pedidos"
-DEFAULT_BASE_URL = "/docs/comprobantes/pedidos"
 
 
 def _dec(v) -> Decimal:
@@ -118,16 +114,9 @@ class ComprobantePedidoService:
         pdf_bytes = ComprobantePedidoService.generar_pdf_bytes(db, id_pedido=id_pedido)
 
         filename = f"pedido_{id_pedido}.pdf"
-        base_path = (COMPROBANTES_BASE_PATH or DEFAULT_BASE_PATH).rstrip("/")
-        base_url = (COMPROBANTES_BASE_URL or DEFAULT_BASE_URL).rstrip("/")
-
-        os.makedirs(base_path, exist_ok=True)
-
-        file_path = os.path.join(base_path, filename)
-        url_archivo = f"{base_url}/{filename}"
-
-        with open(file_path, "wb") as f:
-            f.write(pdf_bytes)
+        storage = get_storage()
+        clave = storage.guardar(CATEGORIA_COMPROBANTES_PEDIDOS, filename, pdf_bytes)
+        url_archivo = storage.url_publica(clave)
 
         pedido: Pedido = db.execute(
             select(Pedido).where(Pedido.id_pedido == id_pedido)

@@ -296,13 +296,21 @@ en el contrato. Sin autenticación: `POST /auth/login`, `POST /auth/token`,
 
 **Inconsistencias de capas:**
 
-- `app/core/settings.py` sigue vivo (no se borró en el paso 1, ver esa
-  sección). `comprobantePedidoService.py` y `comprobantePagoService.py`
-  siguen escribiendo archivos a mano con `COMPROBANTES_BASE_PATH`/`_URL` en
-  vez de usar `core/storage.py`. Migrarlos a `get_storage()` y borrar
-  `settings.py`. Esto además toca las URLs guardadas en `documentos`
-  (`/docs/comprobantes/...` → `/archivos/<codigo>/...`), coordinar con
-  Flutter si hay que migrar datos del cliente actual.
+- ~~`app/core/settings.py` sigue vivo... `comprobantePedidoService.py` y
+  `comprobantePagoService.py` siguen escribiendo archivos a mano.~~
+  **Arreglado en el paso 3 (2026-09-14).** Los dos services ahora usan
+  `core/storage.py` (`get_storage().guardar(...)` / `.url_publica(...)`),
+  `settings.py` se borró, y `python-dotenv` salió de `requirements.txt`
+  (ya no lo necesitaba nadie). De paso se encontró que esto no era solo
+  prolijar: desde el paso 1, `main.py` ya no monta `StaticFiles` en
+  `/docs/comprobantes/...` (lo reemplazó el endpoint `/archivos/{clave}`),
+  así que cualquier comprobante generado entre el paso 1 y ahora quedaba
+  con una `url_archivo` que apuntaba a una ruta que ya no existía —
+  comprobantes nuevos, rotos en silencio. Este cambio lo arregla.
+  Sigue pendiente, y sí necesita Flutter: si hay que migrar datos del
+  cliente actual, las URLs viejas en `documentos` (formato
+  `/docs/comprobantes/...`) hay que reescribirlas al formato nuevo
+  (`/archivos/<codigo>/comprobantes/.../AAAA/MM/archivo.pdf`).
 - ~~`persona.py`, `camionReparto.py`, `empleado.py` hacen queries y
   `db.commit()` directo en el router.~~ **Arreglado en el paso 3
   (2026-09-14).** Cada uno con su `service.py` nuevo. `clienteDiaSemana.py`

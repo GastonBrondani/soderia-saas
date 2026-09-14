@@ -15,10 +15,6 @@ openpyxl==3.1.5
 # y security.py.
 pydantic-settings>=2.3,<3   # NoDecode requiere >=2.3
 
-# TODO migracion paso 3: sale cuando se borre app/core/settings.py (lo unico
-# que todavia lo necesita, ver ese archivo).
-python-dotenv==1.1.1
-
 # Testing
 pytest==8.4.1
 pytest-cov==6.0.0
@@ -27,6 +23,7 @@ httpx==0.28.1          # requerido por fastapi.testclient
 # ----------------------------------------------------------------------
 # SACADOS a proposito:
 #
+#   python-dotenv   -> pydantic-settings ya lee el .env
 #   passlib[bcrypt] -> estaba en requirements pero security.py nunca lo
 #                      importo: el hashing es pbkdf2 con hashlib puro.
 #                      Instalarlo sin usarlo trae vulnerabilidades ajenas.

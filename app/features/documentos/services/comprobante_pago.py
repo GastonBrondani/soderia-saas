@@ -1,8 +1,3 @@
-import os
-
-DEFAULT_BASE_PATH = "/data/comprobantes/pagos"
-DEFAULT_BASE_URL = "/docs/comprobantes/pagos"
-
 from datetime import datetime
 from decimal import Decimal
 
@@ -13,10 +8,7 @@ from app.features.pagos.models.pago import Pago
 from app.features.clientes.models.cliente_cuenta import ClienteCuenta
 from app.features.documentos.models.documentos import Documentos
 from app.utils.pdf.comprobante_pago import generar_comprobante_pago_pdf
-from app.core.settings import (
-    COMPROBANTES_BASE_PATH,
-    COMPROBANTES_BASE_URL,
-)
+from app.core.storage import CATEGORIA_COMPROBANTES_PAGOS, get_storage
 
 
 class ComprobantePagoService:
@@ -77,19 +69,9 @@ class ComprobantePagoService:
 
         # 2. Guardar archivo
         filename = f"pago_{id_pago}.pdf"
-        base_path = COMPROBANTES_BASE_PATH or DEFAULT_BASE_PATH
-        base_url = COMPROBANTES_BASE_URL or DEFAULT_BASE_URL
-
-        os.makedirs(base_path, exist_ok=True)
-        
-        url_archivo = f"{base_url}/{filename}"
-
-
-        file_path = os.path.join(base_path, filename)
-
-
-        with open(file_path, "wb") as f:
-            f.write(pdf_bytes)
+        storage = get_storage()
+        clave = storage.guardar(CATEGORIA_COMPROBANTES_PAGOS, filename, pdf_bytes)
+        url_archivo = storage.url_publica(clave)
 
         # 3. Obtener legajo
         legajo = db.execute(
