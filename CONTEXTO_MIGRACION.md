@@ -260,20 +260,30 @@ con movimientos de archivos.
 
 **Bugs silenciosos** (se pueden arreglar sin tocar el contrato):
 
-- `listaPrecios.py`: `obtener_lista` y `listar_productos_con_precio` están
-  definidas **dos veces cada una**. FastAPI usa la primera; las segundas son
-  código muerto que parece vivo.
-- `stock.py`: `listar_detalle` (`GET /stock/detalle`) también está definida
-  dos veces. Mismo bug que en `listaPrecios.py`, no estaba anotado acá.
-- `TipoMovimiento` está definido **dos veces**: en `schemas/enumsStock.py` y
-  en `schemas/movimientoStock.py`, con los mismos valores
-  (ingreso/egreso/ajuste). Distintos archivos importan de uno u otro sin
-  criterio (`producto.py` y `envaseClienteService.py` de `enumsStock`;
-  `stockService.py` de `movimientoStock`). Funciona por casualidad porque
-  ambas son `str, Enum`: comparan igual por valor aunque son clases
-  distintas. Unificar en una sola definición.
+- ~~`listaPrecios.py`: `obtener_lista` y `listar_productos_con_precio`
+  definidas dos veces cada una.~~ **Arreglado en el paso 3 (2026-09-14).**
+  Se borraron las segundas definiciones (código muerto).
+- ~~`stock.py`: `listar_detalle` (`GET /stock/detalle`) definida dos
+  veces.~~ **Arreglado en el paso 3 (2026-09-14).** De paso apareció un
+  tercer duplicado no anotado: `StockDetalleOut` estaba definida también en
+  `schemas/stock.py` además de `schemas/stock_detalle.py`; el router
+  importaba las dos y la segunda pisaba a la primera. Se borró la de
+  `schemas/stock.py`. La corrección hizo que `GET /stock/detalle` cambiara
+  de forma en el contrato: el `response_model` real siempre fue el de la
+  primera definición (con schema), pero el snapshot de OpenAPI reflejaba el
+  de la *segunda* (sin `response_model`, por eso aparecía `"200": null`) —
+  FastAPI arma el `openapi.json` con la última definición de una ruta
+  duplicada aunque el routing use la primera. El JSON que devuelve el
+  endpoint a un cliente real **no cambió** (siempre fue el de la primera
+  definición); solo se corrigió la documentación. Snapshot regenerado y
+  commiteado junto con el fix.
+- ~~`TipoMovimiento` definido dos veces: en `schemas/enumsStock.py` y en
+  `schemas/movimientoStock.py`.~~ **Arreglado en el paso 3 (2026-09-14).**
+  `movimiento_stock.py` ahora importa el enum desde `enums_stock.py` en vez
+  de redefinirlo.
 - `clienteDiaSemana.py`: importa `ClienteDiaVisitaOut` desde `schemas` y
   después redefine la misma clase en el archivo. El import queda pisado.
+  **Pendiente.**
 
 **Confirmado por `snapshot_openapi.py` (paso 0, 2026-09-14):** 128 operaciones
 en el contrato. Sin autenticación: `POST /auth/login`, `POST /auth/token`,

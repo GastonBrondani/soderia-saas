@@ -6,7 +6,7 @@ from fastapi import HTTPException
 
 from app.features.inventario.stock.models.stock import Stock
 from app.features.inventario.movimientos.models.movimiento_stock import MovimientoStock
-from app.features.inventario.movimientos.schemas.movimiento_stock import TipoMovimiento
+from app.features.inventario.movimientos.schemas.enums_stock import TipoMovimiento
 
 
 class StockService:

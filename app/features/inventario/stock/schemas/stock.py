@@ -20,15 +20,3 @@ class StockUpdate(BaseModel):
 class StockOut(StockBase):
     model_config = ConfigDict(from_attributes=True)
     id_stock: int
-      
-class StockDetalleOut(BaseModel):
-    id_stock: int
-    id_producto: int
-    id_empresa: int
-    cantidad: int
-
-    nombre_producto: str
-    litros: Optional[str] = None
-    tipo_dispenser: Optional[str] = None
-
-    model_config = ConfigDict(from_attributes=True)

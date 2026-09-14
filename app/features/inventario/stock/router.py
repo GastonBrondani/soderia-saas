@@ -8,7 +8,6 @@ from app.features.inventario.stock.models.stock import Stock
 from app.features.inventario.stock.schemas.stock import StockOut
 from app.features.inventario.stock.service import StockService
 from app.features.catalogo.productos.models.producto import Producto
-from app.features.inventario.stock.schemas.stock import StockDetalleOut
 from app.features.inventario.stock.schemas.stock_detalle import StockDetalleOut
 
 
@@ -80,45 +79,5 @@ def listar_detalle(
             litros=r.litros,
             tipo_dispenser=r.tipo_dispenser,
         )
-        for r in rows
-    ]
-
-@router.get("/detalle")
-def listar_detalle(
-    db: Session = Depends(get_db),
-    id_empresa: int = Query(...),
-):
-    """
-    Devuelve TODOS los productos activos con su stock actual.
-    Si no hay stock, devuelve cantidad = 0.
-    """
-
-    stmt = (
-        select(
-            Producto.id_producto,
-            Producto.nombre,
-            Producto.litros,
-            Producto.tipo_dispenser,
-            func.coalesce(Stock.cantidad, 0).label("cantidad"),
-        )
-        .outerjoin(
-            Stock,
-            (Stock.id_producto == Producto.id_producto)
-            & (Stock.id_empresa == id_empresa),
-        )
-        .where(Producto.estado == True)
-        .order_by(Producto.nombre)
-    )
-
-    rows = db.execute(stmt).all()
-
-    return [
-        {
-            "id_producto": r.id_producto,
-            "nombre_producto": r.nombre,
-            "litros": r.litros,
-            "tipo_dispenser": r.tipo_dispenser,
-            "cantidad": r.cantidad,
-        }
         for r in rows
     ]

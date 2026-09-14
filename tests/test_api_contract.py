@@ -109,15 +109,6 @@ def test_no_se_desprotegieron_endpoints(baseline: dict, actual: dict) -> None:
     )
 
 
-@pytest.mark.xfail(
-    reason=(
-        "Duplicados preexistentes anotados en 'Deuda tecnica conocida' de "
-        "CONTEXTO_MIGRACION.md (listaPrecios.py x2, stock.py). Se arreglan "
-        "recien en el paso 3: no se toca logica fuera de ese paso. Sacar "
-        "este marcador cuando esos 3 se corrijan."
-    ),
-    strict=True,
-)
 def test_sin_rutas_duplicadas() -> None:
     """Una ruta registrada dos veces significa codigo muerto que parece vivo.
 

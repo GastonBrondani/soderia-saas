@@ -258,6 +258,25 @@
       "Stock"
     ]
   },
+  "GET /archivos/{clave}": {
+    "body": null,
+    "parametros": [
+      "clave:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": null,
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Archivos"
+    ]
+  },
   "GET /caja-empresa/movimientos": {
     "body": null,
     "parametros": [
@@ -1082,7 +1101,9 @@
     "respuestas": {
       "200": null
     },
-    "tags": []
+    "tags": [
+      "Infra"
+    ]
   },
   "GET /historico/{legajo}": {
     "body": null,
@@ -1824,7 +1845,19 @@
     ],
     "protegido": true,
     "respuestas": {
-      "200": null,
+      "200": {
+        "items": {
+          "campos": [
+            "cantidad!",
+            "id_producto!",
+            "litros",
+            "nombre_producto!",
+            "tipo_dispenser"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
       "422": {
         "campos": [
           "detail"

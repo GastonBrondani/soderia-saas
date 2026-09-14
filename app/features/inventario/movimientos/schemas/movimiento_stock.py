@@ -1,12 +1,8 @@
 from datetime import datetime
-from enum import Enum
 from typing import Optional
 from pydantic import BaseModel, ConfigDict,field_validator
 
-class TipoMovimiento(str, Enum):
-    ingreso = "ingreso"
-    egreso = "egreso"
-    ajuste = "ajuste"    
+from app.features.inventario.movimientos.schemas.enums_stock import TipoMovimiento
 
 class MovimientoStockBase(BaseModel):
     id_producto: int    
