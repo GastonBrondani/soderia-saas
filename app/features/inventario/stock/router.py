@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 from app.core.security import get_current_user
 from sqlalchemy.orm import Session
 from sqlalchemy import func, select, delete
 
 from app.core.database import get_db
+from app.core.exceptions import NotFound
 from app.features.inventario.stock.models.stock import Stock
 from app.features.inventario.stock.schemas.stock import StockOut
 from app.features.inventario.stock.service import StockService
@@ -38,7 +39,7 @@ def set_por_clave(id_producto: int, id_empresa: int, cantidad: int, db: Session 
 def eliminar(id_stock: int, db: Session = Depends(get_db)):
     entity = db.get(Stock, id_stock)
     if not entity:
-        raise HTTPException(status_code=404, detail="Stock no encontrado.")
+        raise NotFound("Stock no encontrado.")
     db.execute(delete(Stock).where(Stock.id_stock == id_stock))
     db.commit()
     

@@ -1,12 +1,13 @@
 from datetime import datetime,date
 from typing import Optional
 
-from fastapi import Depends,status,APIRouter,HTTPException,Query,Response
+from fastapi import Depends,status,APIRouter,Query,Response
 from app.core.security import get_current_user
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 from sqlalchemy.exc import IntegrityError
 from app.core.database import get_db
+from app.core.exceptions import AppError, NotFound
 
 
 from app.features.clientes.models.cliente import Cliente
@@ -58,10 +59,7 @@ def crear_visita_cliente(payload: VisitaCreate, response: Response, cliente: Cli
         if payload.envases:
             reparto = db.get(RepartoDia, payload.id_repartodia)
             if reparto is None:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="RepartoDia no encontrado.",
-                )
+                raise NotFound("RepartoDia no encontrado.")
 
             for envase in payload.envases:
                 EnvaseClienteService.registrar_movimiento(
@@ -115,7 +113,7 @@ def crear_visita_cliente(payload: VisitaCreate, response: Response, cliente: Cli
             response.status_code = status.HTTP_200_OK
             return existente
         raise
-    except HTTPException:
+    except AppError:
         # Falló un movimiento de envase (saldo/stock insuficiente, reparto
         # inexistente, etc.): revertimos todo para no dejar la visita a medias.
         db.rollback()
@@ -139,10 +137,7 @@ def listar_visitas(
     - Si no se envía ninguno, devuelve 400.
     """
     if legajo is None and fecha is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Debes indicar al menos legajo o fecha.",
-        )
+        raise AppError("Debes indicar al menos legajo o fecha.")
 
     stmt = select(Visita)
 

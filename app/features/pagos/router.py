@@ -1,5 +1,6 @@
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
+from app.core.exceptions import AppError
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -125,7 +126,7 @@ def generar_comprobante_pago(
         }
     except Exception as e:
         print("ERROR GENERANDO COMPROBANTE:", repr(e))
-        raise HTTPException(status_code=400, detail=str(e))
+        raise AppError(str(e))
     
 @router.post("/libre", response_model=PagoLibreOut)
 def crear_pago_libre(

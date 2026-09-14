@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends
-from fastapi import HTTPException, status
+from fastapi import status
 from app.core.security import get_current_user
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from app.core.database import get_db
+from app.core.exceptions import NotFound
 from app.features.documentos.models.documentos import Documentos
 from app.features.documentos.services.comprobante_pedido import ComprobantePedidoService
 
@@ -47,6 +48,4 @@ def generar_documento_pedido(id_pedido: int, db: Session = Depends(get_db)):
             "observacion": doc.observacion,
         }
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generando comprobante de pedido: {e}")
+        raise NotFound(str(e))

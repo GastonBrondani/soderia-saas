@@ -1,10 +1,11 @@
 # app/api/routers/auth.py
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.exceptions import Unauthorized
 from app.core.security import (
     create_access_token,
     hash_password,
@@ -31,17 +32,11 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     )
     if not user:
         # No revelamos si falló usuario o pass
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciales inválidas.",
-        )
+        raise Unauthorized("Credenciales inválidas.")
 
     # 2) Verificar contraseña
     if not verify_password(payload.contrasena, user.contrasena):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciales inválidas.",
-        )
+        raise Unauthorized("Credenciales inválidas.")
 
     # Hashes viejos (100.000 iteraciones) se migran solos al login.
     if necesita_rehash(user.contrasena):
@@ -90,17 +85,11 @@ def token(
         .first()
     )
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciales inválidas.",
-        )
+        raise Unauthorized("Credenciales inválidas.")
 
     # 2) Verificar contraseña
     if not verify_password(contrasena, user.contrasena):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciales inválidas.",
-        )
+        raise Unauthorized("Credenciales inválidas.")
 
     # Hashes viejos (100.000 iteraciones) se migran solos al login.
     if necesita_rehash(user.contrasena):

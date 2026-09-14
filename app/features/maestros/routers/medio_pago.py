@@ -1,10 +1,11 @@
 # app/routers/medios_pago.py
-from fastapi import APIRouter, Depends, status, HTTPException
+from fastapi import APIRouter, Depends, status
 from app.core.security import get_current_user
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 
 from app.core.database import get_db
+from app.core.exceptions import Conflict
 from app.features.maestros.models.medio_pago import MedioPago   # ajustá la ruta si difiere
 from app.features.maestros.schemas.medio_pago import MedioPagoCreate, MedioPagoOut
 
@@ -19,7 +20,7 @@ def crear_medio_pago(data: MedioPagoCreate, db: Session = Depends(get_db)):
         select(MedioPago).where(func.lower(MedioPago.nombre) == nombre_norm.lower())
     ).scalar_one_or_none()
     if existe:
-        raise HTTPException(status_code=409, detail="El medio de pago ya existe.")
+        raise Conflict("El medio de pago ya existe.")
 
     medio = MedioPago(nombre=nombre_norm)
     db.add(medio)

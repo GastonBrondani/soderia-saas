@@ -1,6 +1,6 @@
 from datetime import date, datetime, time, timedelta
 
-from fastapi import APIRouter, Query, status, Depends, HTTPException
+from fastapi import APIRouter, Query, status, Depends
 from app.core.security import get_current_user
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -9,6 +9,7 @@ from typing import List, Optional
 
 
 from app.core.database import get_db
+from app.core.exceptions import AppError, NotFound
 
 from app.features.clientes.models.cliente import Cliente
 from app.features.auditoria.models.historico import Historico
@@ -41,7 +42,7 @@ def feed_historico_cliente(
     """
     cliente = db.get(Cliente, legajo)
     if not cliente:
-        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+        raise NotFound("Cliente no encontrado")
 
     hoy = date.today()
     if fecha_hasta is None:
@@ -49,10 +50,7 @@ def feed_historico_cliente(
     if fecha_desde is None:
         fecha_desde = fecha_hasta - timedelta(days=7)
     if fecha_desde > fecha_hasta:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="fecha_desde no puede ser mayor que fecha_hasta",
-        )
+        raise AppError("fecha_desde no puede ser mayor que fecha_hasta")
 
     inicio = datetime.combine(fecha_desde, time.min)
     fin = datetime.combine(fecha_hasta, time.max)
@@ -76,7 +74,7 @@ def feed_historico_cliente(
 def obtener_historico_cliente(legajo: int,db=Depends(get_db)):
     historico = db.query(Historico).filter(Historico.legajo == legajo).first()
     if not historico:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Historico no encontrado")
+        raise NotFound("Historico no encontrado")
     return historico
 
 @router.get(
@@ -91,7 +89,7 @@ def listar_historico_cliente(
 ):
     cliente = db.get(Cliente, legajo)
     if not cliente:
-        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+        raise NotFound("Cliente no encontrado")
 
     stmt = (
         select(Historico)

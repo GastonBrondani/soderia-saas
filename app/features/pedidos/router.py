@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from fastapi import APIRouter, Depends, status, Response
 from app.core.security import get_current_user
 from sqlalchemy.orm import Session
 from datetime import date
@@ -35,18 +35,6 @@ def confirmar_pedido(id_pedido: int, data: PedidoConfirmarIn, db: Session = Depe
     """
     return PedidoService.confirmar_pedido(db, id_pedido, data)
 
-#Cancelado
-#@router.post("/cancelar-deuda", response_model=ClienteCuentaOut)
-#def cancelar_deuda(
-#    data: PedidoCancelarDeudaIn,
-#    db: Session = Depends(get_db),
-#):
-#    """
-#    Permite registrar un pago de cuenta SIN generar un pedido.
-#    Actualiza deuda/saldo y la recaudación del reparto.
-#    """
-#    return PedidoService.cancelar_deuda(db, data)
-
 @router.get("/por-fecha", response_model=list[PedidoOut], status_code=status.HTTP_200_OK)
 def obtener_pedido(fecha: date, db: Session = Depends(get_db)):
     """
@@ -56,15 +44,12 @@ def obtener_pedido(fecha: date, db: Session = Depends(get_db)):
 
 @router.post("/{id_pedido}/comprobante")
 def generar_comprobante_pedido(id_pedido: int, db: Session = Depends(get_db)):
-    try:
-        doc = ComprobantePedidoService.generar_y_guardar(db, id_pedido=id_pedido)
-        return {
-            "id_documento": doc.id_documento,
-            "nombre_archivo": doc.nombre_archivo,
-            "tipo_archivo": doc.tipo_archivo,
-            "url": doc.url_archivo,
-            "fecha": doc.fecha_carga,
-            "observacion": doc.observacion,
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generando comprobante: {e}")
+    doc = ComprobantePedidoService.generar_y_guardar(db, id_pedido=id_pedido)
+    return {
+        "id_documento": doc.id_documento,
+        "nombre_archivo": doc.nombre_archivo,
+        "tipo_archivo": doc.tipo_archivo,
+        "url": doc.url_archivo,
+        "fecha": doc.fecha_carga,
+        "observacion": doc.observacion,
+    }

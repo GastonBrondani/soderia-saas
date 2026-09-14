@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from app.core.security import get_current_user
 from sqlalchemy.orm import Session
 from app.core.database import get_db
+from app.core.exceptions import NotFound
 from app.features.repartos.recorridos.schemas import RecorridoCreate, RecorridoOut
 from app.features.repartos.recorridos.service import RecorridoService
 from app.features.repartos.recorridos.models.recorrido import Recorrido
@@ -18,5 +19,5 @@ def abrir_recorrido(payload: RecorridoCreate, db: Session = Depends(get_db)):
 def get_recorrido(id_recorrido: int, db: Session = Depends(get_db)):
     recorrido = db.get(Recorrido, id_recorrido)
     if not recorrido:
-        raise HTTPException(status_code=404, detail="Recorrido no encontrado")
+        raise NotFound("Recorrido no encontrado")
     return recorrido

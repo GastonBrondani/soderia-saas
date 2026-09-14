@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, Response, status
 from app.core.security import get_current_user
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from app.core.database import get_db
+from app.core.exceptions import NotFound
 from app.features.catalogo.productos.models.producto import Producto
 from app.features.catalogo.productos.schemas import ProductoCreate, ProductoUpdate, ProductoOut
 from app.features.inventario.stock.service import StockService
@@ -17,7 +18,7 @@ router = APIRouter(prefix="/productos", tags=["Producto"],dependencies=[Depends(
 def _get_producto_or_404(db: Session, id_producto: int) -> Producto:
     obj = db.get(Producto, id_producto)
     if not obj:
-        raise HTTPException(status_code=404, detail="Producto no encontrado")
+        raise NotFound("Producto no encontrado")
     return obj
 
 @router.post("/", response_model=ProductoOut, status_code=status.HTTP_201_CREATED)

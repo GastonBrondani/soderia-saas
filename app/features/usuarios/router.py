@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 from sqlalchemy import select
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from app.core.security import get_current_user
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.exceptions import Conflict, NotFound
 from app.core.security import hash_password
 from app.features.usuarios.models.usuario import Usuario
 from app.features.usuarios.schemas import UsuarioCreate, UsuarioOut
@@ -30,9 +31,8 @@ def crear_usuario(payload: UsuarioCreate, db: Session = Depends(get_db)):
         db.refresh(entity)
     except IntegrityError as e:
         db.rollback()
-        raise HTTPException(
-            status_code=409,
-            detail="No se pudo crear el usuario (duplicado o FK inválida).",
+        raise Conflict(
+            "No se pudo crear el usuario (duplicado o FK inválida).",
         ) from e
     return entity
 
@@ -48,5 +48,5 @@ def listar_usuarios(db: Session = Depends(get_db)):
 def obtener_usuario(id_usuario: int, db: Session = Depends(get_db)):
     entity = db.get(Usuario, id_usuario)
     if not entity:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        raise NotFound("Usuario no encontrado")
     return entity
