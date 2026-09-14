@@ -1,12 +1,13 @@
 from datetime import datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from app.core.security import get_current_user, CurrentUser
 from app.core.permissions import require_admin
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from app.core.database import get_db
+from app.core.exceptions import AppError, NotFound
 from app.features.clientes.dependencies import get_cliente_or_404_dep
 from app.features.clientes.models.cliente_cuenta import ClienteCuenta
 from app.features.pedidos.models.pedido import Pedido
@@ -37,7 +38,7 @@ def _get_cuenta_or_404(db: Session, legajo: int, id_cuenta: int) -> ClienteCuent
         )
     ).scalar_one_or_none()
     if not cuenta:
-        raise HTTPException(status_code=404, detail="Cuenta no encontrada.")
+        raise NotFound("Cuenta no encontrada.")
     return cuenta
 
 @router.post("/cuentas", response_model=ClienteCuentaOut, status_code=201)
@@ -97,11 +98,11 @@ def aplicar_interes(
         .with_for_update()
     ).scalar_one_or_none()
     if cuenta is None:
-        raise HTTPException(status_code=404, detail="Cuenta no encontrada.")
+        raise NotFound("Cuenta no encontrada.")
 
     deuda_anterior = _q2(cuenta.deuda or Decimal("0"))
     if deuda_anterior <= Decimal("0"):
-        raise HTTPException(status_code=400, detail="El cliente no tiene deuda pendiente.")
+        raise AppError("El cliente no tiene deuda pendiente.")
 
     # Verificar que exista al menos un pedido impago con más de 30 días de antigüedad
     limite_fecha = datetime.now() - timedelta(days=30)
@@ -114,15 +115,14 @@ def aplicar_interes(
     ).scalar_one_or_none()
 
     if pedido_vencido is None:
-        raise HTTPException(
-            status_code=400,
-            detail="No hay deuda pendiente con más de 30 días de antigüedad.",
+        raise AppError(
+            "No hay deuda pendiente con más de 30 días de antigüedad.",
         )
 
     porcentaje = _q2(payload.porcentaje)
     interes = _q2(deuda_anterior * porcentaje / Decimal("100"))
     if interes <= Decimal("0"):
-        raise HTTPException(status_code=400, detail="El interés calculado es $0.00.")
+        raise AppError("El interés calculado es $0.00.")
 
     cuenta.deuda = _q2(deuda_anterior + interes)
     fecha = datetime.now()

@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException,status
+from fastapi import APIRouter, Depends, status
 from app.core.security import get_current_user
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from app.core.database import get_db
+from app.core.exceptions import AppError, NotFound
 from app.features.clientes.models.email_cliente import MailCliente
 from app.features.clientes.dependencies import get_cliente_or_404_dep
 from app.features.clientes.schemas.email_cliente import MailClienteCreate, MailClienteUpdate, MailClienteOut
@@ -30,7 +31,7 @@ def CrearEmail(legajo:int, playload:MailClienteCreate, db:Session=Depends(get_db
         db.commit()
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=400,detail="El email ya existe para este cliente") from e 
+        raise AppError("El email ya existe para este cliente") from e
     db.refresh(nuevo)
     return nuevo
 
@@ -39,7 +40,7 @@ def ActualizarEmail(legajo:int, id_mail:int, playload:MailClienteUpdate, db:Sess
     get_cliente_or_404_dep(legajo, db)
     obj=db.get(MailCliente,id_mail)
     if not obj or obj.legajo != legajo:
-        raise HTTPException(status_code=404,detail="Email no encontrado para este cliente.")
+        raise NotFound("Email no encontrado para este cliente.")
     
     data=playload.model_dump(exclude_unset=True)
     if "mail" in data and data["mail"] is not None:
@@ -52,7 +53,7 @@ def ActualizarEmail(legajo:int, id_mail:int, playload:MailClienteUpdate, db:Sess
         db.commit()
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=400,detail="El email ya existe para este cliente") from e
+        raise AppError("El email ya existe para este cliente") from e
     db.refresh(obj)
     return obj
 
@@ -61,7 +62,7 @@ def EliminarEmail(legajo:int, id_mail:int, db:Session=Depends(get_db)):
     get_cliente_or_404_dep(legajo, db)
     obj = db.get(MailCliente,id_mail)
     if not obj or obj.legajo != legajo:
-        raise HTTPException(status_code=404,detail="Email no encontrado para este cliente.")
+        raise NotFound("Email no encontrado para este cliente.")
     db.delete(obj)
     db.commit()
     return None

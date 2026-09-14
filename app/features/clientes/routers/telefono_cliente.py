@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException,status
+from fastapi import APIRouter, Depends, status
 from app.core.security import get_current_user
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from app.core.database import get_db
+from app.core.exceptions import AppError, NotFound
 from app.features.clientes.models.telefono_cliente import TelefonoCliente
 from app.features.clientes.dependencies import get_cliente_or_404_dep
 from app.features.clientes.schemas.telefono_cliente import TelefonoClienteCreate, TelefonoClienteUpdate, TelefonoClienteOut
@@ -31,7 +32,7 @@ def CrearTelefono(legajo:int, playload:TelefonoClienteCreate, db:Session=Depends
         db.commit()
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=400,detail="El teléfono ya existe para este cliente") from e 
+        raise AppError("El teléfono ya existe para este cliente") from e
     db.refresh(nuevo)
     return nuevo
 
@@ -40,7 +41,7 @@ def ActualizarTelefono(legajo:int, id_telefono:int, playload:TelefonoClienteUpda
     get_cliente_or_404_dep(legajo, db)    
     obj=db.get(TelefonoCliente,id_telefono)
     if not obj or obj.legajo != legajo:
-        raise HTTPException(status_code=404,detail="Teléfono no encontrado para este cliente.")
+        raise NotFound("Teléfono no encontrado para este cliente.")
     
     data=playload.model_dump(exclude_unset=True)
 
@@ -51,7 +52,7 @@ def ActualizarTelefono(legajo:int, id_telefono:int, playload:TelefonoClienteUpda
         db.commit()
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=400,detail="El teléfono ya existe para este cliente") from e
+        raise AppError("El teléfono ya existe para este cliente") from e
     db.refresh(obj)
     return obj
 
@@ -60,7 +61,7 @@ def EliminarTelefono(legajo:int, id_telefono:int, db:Session=Depends(get_db)):
     get_cliente_or_404_dep(legajo, db)
     obj=db.get(TelefonoCliente,id_telefono)
     if not obj or obj.legajo != legajo:
-        raise HTTPException(status_code=404,detail="Teléfono no encontrado para este cliente.")
+        raise NotFound("Teléfono no encontrado para este cliente.")
     
     db.delete(obj)
     db.commit()

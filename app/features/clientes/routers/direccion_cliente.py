@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException,status
+from fastapi import APIRouter, Depends, status
 from app.core.security import get_current_user
 from sqlalchemy.orm import Session
 from sqlalchemy import select
-from app.core.database import get_db 
+from app.core.database import get_db
+from app.core.exceptions import AppError, NotFound
 from app.features.clientes.models.direccion_cliente import DireccionCliente
 from app.features.clientes.dependencies import get_cliente_or_404_dep
 from app.features.clientes.schemas.direccion_cliente import DireccionClienteCreate, DireccionClienteUpdate, DireccionClienteOut
@@ -34,7 +35,7 @@ def CrearDireccion(legajo:int, playload:DireccionClienteCreate, db:Session=Depen
         db.commit()
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=400,detail="Error al crear la dirección para este cliente") from e
+        raise AppError("Error al crear la dirección para este cliente") from e
     db.refresh(nuevo)
     return nuevo
 
@@ -43,7 +44,7 @@ def ActualizarDireccion(legajo:int, id_direccion:int, playload:DireccionClienteU
     get_cliente_or_404_dep(legajo, db)    
     obj=db.get(DireccionCliente,id_direccion)
     if not obj or obj.legajo != legajo:
-        raise HTTPException(status_code=404,detail="Dirección no encontrada para este cliente.")
+        raise NotFound("Dirección no encontrada para este cliente.")
     
     data=playload.model_dump(exclude_unset=True)
     for k,v in data.items():
@@ -53,7 +54,7 @@ def ActualizarDireccion(legajo:int, id_direccion:int, playload:DireccionClienteU
         db.commit()
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=400,detail="Error al actualizar la dirección para este cliente") from e
+        raise AppError("Error al actualizar la dirección para este cliente") from e
     db.refresh(obj)
     return obj
 
@@ -62,7 +63,7 @@ def EliminarDireccion(legajo:int, id_direccion:int, db:Session=Depends(get_db)):
     get_cliente_or_404_dep(legajo, db)
     obj=db.get(DireccionCliente,id_direccion)
     if not obj or obj.legajo != legajo:
-        raise HTTPException(status_code=404,detail="Dirección no encontrada para este cliente.")
+        raise NotFound("Dirección no encontrada para este cliente.")
     db.delete(obj)
     db.commit()
     return
