@@ -1,0 +1,4039 @@
+{
+  "DELETE /camiones-reparto/{patente}": {
+    "body": null,
+    "parametros": [
+      "patente:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "204": null,
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "CamiónReparto"
+    ]
+  },
+  "DELETE /clientes/{legajo}": {
+    "body": null,
+    "parametros": [
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "204": null,
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Clientes"
+    ]
+  },
+  "DELETE /clientes/{legajo}/dias-visita/{id_dia}": {
+    "body": null,
+    "parametros": [
+      "id_dia:path:req",
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "204": null,
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Cliente - días de visita"
+    ]
+  },
+  "DELETE /clientes/{legajo}/direcciones/{id_direccion}": {
+    "body": null,
+    "parametros": [
+      "id_direccion:path:req",
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "204": null,
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Direcciones Cliente"
+    ]
+  },
+  "DELETE /clientes/{legajo}/emails/{id_mail}": {
+    "body": null,
+    "parametros": [
+      "id_mail:path:req",
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "204": null,
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Emails Cliente"
+    ]
+  },
+  "DELETE /clientes/{legajo}/telefonos/{id_telefono}": {
+    "body": null,
+    "parametros": [
+      "id_telefono:path:req",
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "204": null,
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Teléfonos Cliente"
+    ]
+  },
+  "DELETE /combos/{id_combo}": {
+    "body": null,
+    "parametros": [
+      "id_combo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "204": null,
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Combo"
+    ]
+  },
+  "DELETE /empleados/{legajo}": {
+    "body": null,
+    "parametros": [
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "204": null,
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Empleados"
+    ]
+  },
+  "DELETE /listas-precios/{id_lista}": {
+    "body": null,
+    "parametros": [
+      "id_lista:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "estado",
+          "fecha_creacion!",
+          "id_lista!",
+          "nombre"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "ListaDePrecios"
+    ]
+  },
+  "DELETE /personas/{dni}": {
+    "body": null,
+    "parametros": [
+      "dni:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "204": null,
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Personas"
+    ]
+  },
+  "DELETE /productos/{id_producto}": {
+    "body": null,
+    "parametros": [
+      "id_producto:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "204": null,
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Producto"
+    ]
+  },
+  "DELETE /servicios/{id_cliente_servicio}/alquiler-dispenser": {
+    "body": null,
+    "parametros": [
+      "id_cliente_servicio:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": null,
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Servicios"
+    ]
+  },
+  "DELETE /stock/{id_stock}": {
+    "body": null,
+    "parametros": [
+      "id_stock:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "204": null,
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Stock"
+    ]
+  },
+  "GET /caja-empresa/movimientos": {
+    "body": null,
+    "parametros": [
+      "fecha_desde:query:req",
+      "fecha_hasta:query:req",
+      "id_empresa:query:opt",
+      "limit:query:opt",
+      "offset:query:opt"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "items!",
+          "total!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Caja Empresa"
+    ]
+  },
+  "GET /caja-empresa/total": {
+    "body": null,
+    "parametros": [
+      "id_empresa:query:opt"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "total!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Caja Empresa"
+    ]
+  },
+  "GET /caja-empresa/total-por-fecha": {
+    "body": null,
+    "parametros": [
+      "fecha:query:req",
+      "id_empresa:query:opt"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "total!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Caja Empresa"
+    ]
+  },
+  "GET /caja-empresa/total-por-rango": {
+    "body": null,
+    "parametros": [
+      "fecha_desde:query:req",
+      "fecha_hasta:query:req",
+      "id_empresa:query:opt"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "total!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Caja Empresa"
+    ]
+  },
+  "GET /camiones-reparto/": {
+    "body": null,
+    "parametros": [
+      "activo:query:opt"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "activo",
+            "id_empresa",
+            "patente!"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "CamiónReparto"
+    ]
+  },
+  "GET /camiones-reparto/{patente}": {
+    "body": null,
+    "parametros": [
+      "patente:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "activo",
+          "id_empresa",
+          "patente!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "CamiónReparto"
+    ]
+  },
+  "GET /catalogo/bootstrap": {
+    "body": null,
+    "parametros": [
+      "id_empresa:query:opt"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "combos!",
+          "listas_precios!",
+          "medios_pago!",
+          "productos!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Catálogo"
+    ]
+  },
+  "GET /clientes/": {
+    "body": null,
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "dias_semanas",
+            "dni!",
+            "legajo!",
+            "observacion",
+            "persona",
+            "telefonos"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      }
+    },
+    "tags": [
+      "Clientes"
+    ]
+  },
+  "GET /clientes/agenda/visitas": {
+    "body": null,
+    "parametros": [
+      "fecha:query:req",
+      "turno:query:opt"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "clientes!",
+          "fecha!",
+          "id_dia!",
+          "nombre_dia!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Cliente - días de visita"
+    ]
+  },
+  "GET /clientes/agenda/visitas/con-datos": {
+    "body": null,
+    "parametros": [
+      "fecha:query:req",
+      "turno:query:opt"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "clientes!",
+          "fecha!",
+          "id_dia!",
+          "nombre_dia!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Cliente - días de visita"
+    ]
+  },
+  "GET /clientes/agenda/visitas/dia/{id_dia}": {
+    "body": null,
+    "parametros": [
+      "fecha:query:opt",
+      "id_dia:path:req",
+      "turno:query:opt"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "clientes!",
+          "id_dia!",
+          "nombre_dia!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Cliente - días de visita"
+    ]
+  },
+  "GET /clientes/agenda/visitas/rango": {
+    "body": null,
+    "parametros": [
+      "desde:query:req",
+      "hasta:query:req",
+      "turno:query:opt"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "desde!",
+          "dias!",
+          "hasta!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Cliente - días de visita"
+    ]
+  },
+  "GET /clientes/{legajo}/cuentas": {
+    "body": null,
+    "parametros": [
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "deuda",
+            "estado",
+            "id_cuenta!",
+            "legajo!",
+            "numero_bidones",
+            "saldo",
+            "tipo_de_cuenta"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "ClienteCuenta"
+    ]
+  },
+  "GET /clientes/{legajo}/cuentas/{id_cuenta}": {
+    "body": null,
+    "parametros": [
+      "id_cuenta:path:req",
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "deuda",
+          "estado",
+          "id_cuenta!",
+          "legajo!",
+          "numero_bidones",
+          "saldo",
+          "tipo_de_cuenta"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "ClienteCuenta"
+    ]
+  },
+  "GET /clientes/{legajo}/detalle": {
+    "body": null,
+    "parametros": [
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "cuentas",
+          "dias_semanas",
+          "dias_visita",
+          "direcciones",
+          "dni!",
+          "emails",
+          "historicos",
+          "legajo!",
+          "observacion",
+          "pedidos",
+          "persona",
+          "productos",
+          "telefonos",
+          "turno_visita"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Clientes"
+    ]
+  },
+  "GET /clientes/{legajo}/dias-visita": {
+    "body": null,
+    "parametros": [
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "id_dia!",
+            "nombre_dia!",
+            "turno_visita"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Cliente - días de visita"
+    ]
+  },
+  "GET /clientes/{legajo}/direcciones/": {
+    "body": null,
+    "parametros": [
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "direccion",
+            "entre_calle1",
+            "entre_calle2",
+            "id_direccion!",
+            "latitud_longitud",
+            "legajo!",
+            "localidad",
+            "observacion",
+            "tipo",
+            "zona"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Direcciones Cliente"
+    ]
+  },
+  "GET /clientes/{legajo}/emails/": {
+    "body": null,
+    "parametros": [
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "estado",
+            "id_mail!",
+            "legajo!",
+            "mail",
+            "observacion"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Emails Cliente"
+    ]
+  },
+  "GET /clientes/{legajo}/historicos": {
+    "body": null,
+    "parametros": [
+      "legajo:path:req",
+      "limit:query:opt"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "datos",
+            "detalle",
+            "fecha!",
+            "id_historico!",
+            "legajo!",
+            "monto",
+            "observacion",
+            "tipo_evento!"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Clientes"
+    ]
+  },
+  "GET /clientes/{legajo}/pedidos": {
+    "body": null,
+    "parametros": [
+      "legajo:path:req",
+      "limit:query:opt"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "estado",
+            "fecha!",
+            "id_pedido!",
+            "total"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Clientes"
+    ]
+  },
+  "GET /clientes/{legajo}/productos": {
+    "body": null,
+    "parametros": [
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "cantidad!",
+            "estado",
+            "fecha_entrega",
+            "id_producto!",
+            "nombre!"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Clientes"
+    ]
+  },
+  "GET /clientes/{legajo}/telefonos/": {
+    "body": null,
+    "parametros": [
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "estado",
+            "id_telefono!",
+            "legajo!",
+            "nro_telefono",
+            "observacion"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Teléfonos Cliente"
+    ]
+  },
+  "GET /combos/": {
+    "body": null,
+    "parametros": [
+      "id_empresa:query:opt",
+      "limit:query:opt",
+      "offset:query:opt"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "descripcion",
+            "estado",
+            "id_combo!",
+            "id_empresa!",
+            "nombre!"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Combo"
+    ]
+  },
+  "GET /combos/{id_combo}": {
+    "body": null,
+    "parametros": [
+      "id_combo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "descripcion",
+          "estado",
+          "id_combo!",
+          "id_empresa!",
+          "nombre!",
+          "productos"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Combo"
+    ]
+  },
+  "GET /dias-semana/": {
+    "body": null,
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "id_dia!",
+            "nombre_dia!"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      }
+    },
+    "tags": [
+      "Días de semana"
+    ]
+  },
+  "GET /documentos/cliente/{legajo}": {
+    "body": null,
+    "parametros": [
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": null,
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Documentos"
+    ]
+  },
+  "GET /empleados/": {
+    "body": null,
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "dni!",
+            "fecha_ingreso",
+            "legajo!",
+            "persona"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      }
+    },
+    "tags": [
+      "Empleados"
+    ]
+  },
+  "GET /empleados/{legajo}": {
+    "body": null,
+    "parametros": [
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "dni!",
+          "fecha_ingreso",
+          "legajo!",
+          "persona"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Empleados"
+    ]
+  },
+  "GET /empresas/": {
+    "body": null,
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "id_empresa!",
+            "razon_social!"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      }
+    },
+    "tags": [
+      "Empresa"
+    ]
+  },
+  "GET /health": {
+    "body": null,
+    "parametros": [],
+    "protegido": false,
+    "respuestas": {
+      "200": null
+    },
+    "tags": []
+  },
+  "GET /historico/{legajo}": {
+    "body": null,
+    "parametros": [
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "datos",
+          "detalle",
+          "fecha!",
+          "id_historico!",
+          "legajo!",
+          "monto",
+          "observacion",
+          "tipo_evento!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Historico"
+    ]
+  },
+  "GET /historico/{legajo}/feed": {
+    "body": null,
+    "parametros": [
+      "fecha_desde:query:opt",
+      "fecha_hasta:query:opt",
+      "legajo:path:req",
+      "limit:query:opt"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "datos",
+            "detalle",
+            "fecha!",
+            "id_historico!",
+            "legajo!",
+            "monto",
+            "observacion",
+            "tipo_evento!"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Historico"
+    ]
+  },
+  "GET /historico/{legajo}/historicos": {
+    "body": null,
+    "parametros": [
+      "legajo:path:req",
+      "limit:query:opt"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "datos",
+            "detalle",
+            "fecha!",
+            "id_historico!",
+            "legajo!",
+            "monto",
+            "observacion",
+            "tipo_evento!"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Historico"
+    ]
+  },
+  "GET /listas-precios/": {
+    "body": null,
+    "parametros": [
+      "limit:query:opt",
+      "offset:query:opt"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "estado",
+            "fecha_creacion!",
+            "id_lista!",
+            "nombre"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "ListaDePrecios"
+    ]
+  },
+  "GET /listas-precios/{id_lista}": {
+    "body": null,
+    "parametros": [
+      "id_lista:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "estado",
+          "fecha_creacion!",
+          "id_lista!",
+          "nombre"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "ListaDePrecios"
+    ]
+  },
+  "GET /listas-precios/{id_lista}/combos": {
+    "body": null,
+    "parametros": [
+      "id_lista:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "id_combo!",
+            "nombre!",
+            "precio!"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "ListaDePrecios"
+    ]
+  },
+  "GET /listas-precios/{id_lista}/items": {
+    "body": null,
+    "parametros": [
+      "id_lista:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "estado",
+            "id_item!",
+            "id_lista!",
+            "nombre!",
+            "precio!",
+            "tipo!"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "ListaDePrecios"
+    ]
+  },
+  "GET /listas-precios/{id_lista}/precios-servicios": {
+    "body": null,
+    "parametros": [
+      "id_lista:path:req",
+      "include_tipo:query:opt"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "id_cliente_servicio!",
+            "id_lista!",
+            "precio!",
+            "servicio_tipo"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "ListaDePrecios"
+    ]
+  },
+  "GET /listas-precios/{id_lista}/productos": {
+    "body": null,
+    "parametros": [
+      "id_lista:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "es_envase",
+            "estado",
+            "id_empresa_stock",
+            "id_lista!",
+            "id_producto!",
+            "litros",
+            "nombre",
+            "observacion",
+            "precio!",
+            "stock_inicial",
+            "tipo_dispenser"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "ListaDePrecios"
+    ]
+  },
+  "GET /medios-pago/": {
+    "body": null,
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "id_medio_pago!",
+            "nombre!"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      }
+    },
+    "tags": [
+      "Medios de pago"
+    ]
+  },
+  "GET /movimientos-stock/": {
+    "body": null,
+    "parametros": [
+      "id_producto:query:opt",
+      "limit:query:opt"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "cantidad!",
+            "fecha",
+            "id_movimiento!",
+            "id_pedido",
+            "id_producto!",
+            "id_recorrido",
+            "observacion",
+            "tipo_movimiento!"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Movimiento de Stock"
+    ]
+  },
+  "GET /pedidos/por-fecha": {
+    "body": null,
+    "parametros": [
+      "fecha:query:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "client_uuid",
+            "estado",
+            "fecha",
+            "id_cuenta",
+            "id_empresa",
+            "id_medio_pago!",
+            "id_pedido!",
+            "id_repartodia!",
+            "idempotency_key",
+            "items",
+            "legajo!",
+            "monto_abonado",
+            "monto_total!",
+            "observacion"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Pedidos"
+    ]
+  },
+  "GET /personas/": {
+    "body": null,
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "apellido!",
+            "dni!",
+            "nombre!"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      }
+    },
+    "tags": [
+      "Personas"
+    ]
+  },
+  "GET /personas/{dni}": {
+    "body": null,
+    "parametros": [
+      "dni:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "apellido!",
+          "dni!",
+          "nombre!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Personas"
+    ]
+  },
+  "GET /productos/": {
+    "body": null,
+    "parametros": [
+      "limit:query:opt",
+      "offset:query:opt"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "es_envase",
+            "estado",
+            "id_empresa_stock",
+            "id_producto!",
+            "litros",
+            "nombre",
+            "observacion",
+            "stock_inicial",
+            "tipo_dispenser"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Producto"
+    ]
+  },
+  "GET /productos/{id_producto}": {
+    "body": null,
+    "parametros": [
+      "id_producto:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "es_envase",
+          "estado",
+          "id_empresa_stock",
+          "id_producto!",
+          "litros",
+          "nombre",
+          "observacion",
+          "stock_inicial",
+          "tipo_dispenser"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Producto"
+    ]
+  },
+  "GET /recorridos/recorridos/{id_recorrido}": {
+    "body": null,
+    "parametros": [
+      "id_recorrido:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "dinero_inicial",
+          "id_camion",
+          "id_empleado",
+          "id_recorrido!",
+          "id_repartodia",
+          "observacion",
+          "stock_inicial"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Recorrido"
+    ]
+  },
+  "GET /repartos-dia/bootstrap": {
+    "body": null,
+    "parametros": [
+      "fecha:query:req",
+      "id_empresa:query:opt"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "clientes!",
+          "fecha!",
+          "id_dia!",
+          "reparto"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Reparto Día"
+    ]
+  },
+  "GET /repartos-dia/por-fecha": {
+    "body": null,
+    "parametros": [
+      "fecha:query:req",
+      "id_empresa:query:opt",
+      "id_usuario:query:opt"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "fecha!",
+          "id_empresa!",
+          "id_repartodia!",
+          "id_usuario!",
+          "observacion",
+          "total_efectivo",
+          "total_recaudado",
+          "total_virtual"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Reparto Día"
+    ]
+  },
+  "GET /repartos-dia/por-rango": {
+    "body": null,
+    "parametros": [
+      "fecha_desde:query:req",
+      "fecha_hasta:query:req",
+      "id_empresa:query:opt",
+      "id_usuario:query:opt"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "fecha!",
+            "id_empresa!",
+            "id_repartodia!",
+            "id_usuario!",
+            "observacion",
+            "total_efectivo",
+            "total_recaudado",
+            "total_virtual"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Reparto Día"
+    ]
+  },
+  "GET /reportes/excel-cuentas": {
+    "body": null,
+    "parametros": [
+      "anio:query:opt",
+      "dia:query:opt",
+      "mes:query:opt"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": null,
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Reportes"
+    ]
+  },
+  "GET /servicios/clientes/{legajo}": {
+    "body": null,
+    "parametros": [
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "activo!",
+            "fecha_inicio!",
+            "id_cliente_servicio!",
+            "legajo!",
+            "monto_mensual!",
+            "tipo_servicio!"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Servicios"
+    ]
+  },
+  "GET /servicios/clientes/{legajo}/pendientes": {
+    "body": null,
+    "parametros": [
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": null,
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Servicios"
+    ]
+  },
+  "GET /stock/": {
+    "body": null,
+    "parametros": [
+      "id_empresa:query:opt",
+      "id_producto:query:opt",
+      "limit:query:opt",
+      "offset:query:opt"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "cantidad",
+            "id_empresa!",
+            "id_producto!",
+            "id_stock!"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Stock"
+    ]
+  },
+  "GET /stock/detalle": {
+    "body": null,
+    "parametros": [
+      "id_empresa:query:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": null,
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Stock"
+    ]
+  },
+  "GET /usuarios/": {
+    "body": null,
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "id_usuario!",
+            "legajo_cliente",
+            "legajo_empleado",
+            "nombre_usuario!"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      }
+    },
+    "tags": [
+      "Usuarios"
+    ]
+  },
+  "GET /usuarios/{id_usuario}": {
+    "body": null,
+    "parametros": [
+      "id_usuario:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "id_usuario!",
+          "legajo_cliente",
+          "legajo_empleado",
+          "nombre_usuario!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Usuarios"
+    ]
+  },
+  "GET /visitas/visitas": {
+    "body": null,
+    "parametros": [
+      "fecha:query:opt",
+      "legajo:query:opt"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "client_uuid",
+            "estado!",
+            "fecha",
+            "id_visita!",
+            "idempotency_key",
+            "legajo!"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Visitas"
+    ]
+  },
+  "PATCH /camiones-reparto/{patente}": {
+    "body": {
+      "forma": {
+        "campos": [
+          "activo"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [
+      "patente:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "activo",
+          "id_empresa",
+          "patente!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "CamiónReparto"
+    ]
+  },
+  "PATCH /clientes/{legajo}/productos/{id_producto}": {
+    "body": {
+      "forma": {
+        "campos": [
+          "cantidad",
+          "estado",
+          "fecha_entrega"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [
+      "id_producto:path:req",
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "cantidad!",
+          "estado",
+          "fecha_entrega",
+          "id_producto!",
+          "nombre!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Clientes"
+    ]
+  },
+  "PATCH /servicios/{id_cliente_servicio}/monto": {
+    "body": {
+      "forma": {
+        "campos": [
+          "actualizar_periodos_no_pagados",
+          "aplicar_desde",
+          "monto_mensual!"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [
+      "id_cliente_servicio:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": null,
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Servicios"
+    ]
+  },
+  "POST /agenda/mover": {
+    "body": {
+      "forma": {
+        "campos": [
+          "despues_de_legajo",
+          "id_cliente!",
+          "id_dia!",
+          "posicion!",
+          "turno"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "200": null,
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Agenda"
+    ]
+  },
+  "POST /auth/login": {
+    "body": {
+      "forma": {
+        "campos": [
+          "contraseña!",
+          "nombre_usuario!"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [],
+    "protegido": false,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "access_token!",
+          "id_usuario!",
+          "nombre_usuario!",
+          "roles!",
+          "token_type"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Auth"
+    ]
+  },
+  "POST /auth/token": {
+    "body": null,
+    "parametros": [],
+    "protegido": false,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "access_token!",
+          "id_usuario!",
+          "nombre_usuario!",
+          "roles!",
+          "token_type"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Auth"
+    ]
+  },
+  "POST /caja-empresa/cierre-diario": {
+    "body": null,
+    "parametros": [
+      "fecha:query:opt"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": null,
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Caja Empresa"
+    ]
+  },
+  "POST /camiones-reparto/": {
+    "body": {
+      "forma": {
+        "campos": [
+          "activo",
+          "id_empresa",
+          "patente!"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "201": {
+        "campos": [
+          "activo",
+          "id_empresa",
+          "patente!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "CamiónReparto"
+    ]
+  },
+  "POST /clientes/": {
+    "body": {
+      "forma": {
+        "campos": [
+          "dias_visita",
+          "direcciones",
+          "dni",
+          "emails",
+          "frecuencias",
+          "observacion",
+          "persona",
+          "telefonos",
+          "turno_visita"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "201": {
+        "campos": [
+          "cuentas",
+          "dias_semanas",
+          "dias_visita",
+          "direcciones",
+          "dni!",
+          "emails",
+          "historicos",
+          "legajo!",
+          "observacion",
+          "pedidos",
+          "persona",
+          "productos",
+          "telefonos",
+          "turno_visita"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Clientes"
+    ]
+  },
+  "POST /clientes/{legajo}/cuentas": {
+    "body": {
+      "forma": {
+        "campos": [
+          "deuda",
+          "estado",
+          "numero_bidones",
+          "saldo",
+          "tipo_de_cuenta"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "201": {
+        "campos": [
+          "deuda",
+          "estado",
+          "id_cuenta!",
+          "legajo!",
+          "numero_bidones",
+          "saldo",
+          "tipo_de_cuenta"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "ClienteCuenta"
+    ]
+  },
+  "POST /clientes/{legajo}/cuentas/{id_cuenta}/aplicar-interes": {
+    "body": {
+      "forma": {
+        "campos": [
+          "observacion",
+          "porcentaje!"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [
+      "id_cuenta:path:req",
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "deuda_anterior!",
+          "deuda_nueva!",
+          "fecha!",
+          "id_cuenta!",
+          "interes_aplicado!",
+          "legajo!",
+          "porcentaje!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "ClienteCuenta"
+    ]
+  },
+  "POST /clientes/{legajo}/direcciones/": {
+    "body": {
+      "forma": {
+        "campos": [
+          "direccion",
+          "entre_calle1",
+          "entre_calle2",
+          "latitud_longitud",
+          "localidad",
+          "observacion",
+          "tipo",
+          "zona"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "201": {
+        "campos": [
+          "direccion",
+          "entre_calle1",
+          "entre_calle2",
+          "id_direccion!",
+          "latitud_longitud",
+          "legajo!",
+          "localidad",
+          "observacion",
+          "tipo",
+          "zona"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Direcciones Cliente"
+    ]
+  },
+  "POST /clientes/{legajo}/emails/": {
+    "body": {
+      "forma": {
+        "campos": [
+          "estado",
+          "mail",
+          "observacion"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "201": {
+        "campos": [
+          "estado",
+          "id_mail!",
+          "legajo!",
+          "mail",
+          "observacion"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Emails Cliente"
+    ]
+  },
+  "POST /clientes/{legajo}/telefonos/": {
+    "body": {
+      "forma": {
+        "campos": [
+          "estado",
+          "nro_telefono",
+          "observacion"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "201": {
+        "campos": [
+          "estado",
+          "id_telefono!",
+          "legajo!",
+          "nro_telefono",
+          "observacion"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Teléfonos Cliente"
+    ]
+  },
+  "POST /combos/": {
+    "body": {
+      "forma": {
+        "campos": [
+          "descripcion",
+          "estado",
+          "id_empresa!",
+          "nombre!",
+          "productos"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "201": {
+        "campos": [
+          "descripcion",
+          "estado",
+          "id_combo!",
+          "id_empresa!",
+          "nombre!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Combo"
+    ]
+  },
+  "POST /dias-semana/": {
+    "body": {
+      "forma": {
+        "items": {
+          "campos": [
+            "id_dia!",
+            "nombre_dia!"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "requerido": true
+    },
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "items": {
+          "campos": [
+            "id_dia!",
+            "nombre_dia!"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Días de semana"
+    ]
+  },
+  "POST /documentos/pedidos/{id_pedido}": {
+    "body": null,
+    "parametros": [
+      "id_pedido:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "201": null,
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Documentos"
+    ]
+  },
+  "POST /empleados/": {
+    "body": {
+      "forma": {
+        "campos": [
+          "dni",
+          "fecha_ingreso",
+          "persona"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "201": {
+        "campos": [
+          "dni!",
+          "fecha_ingreso",
+          "legajo!",
+          "persona"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Empleados"
+    ]
+  },
+  "POST /empresas/": {
+    "body": {
+      "forma": {
+        "campos": [
+          "razon_social!"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "201": {
+        "campos": [
+          "id_empresa!",
+          "razon_social!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Empresa"
+    ]
+  },
+  "POST /listas-precios/": {
+    "body": {
+      "forma": {
+        "campos": [
+          "estado",
+          "nombre!"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "201": {
+        "campos": [
+          "estado",
+          "fecha_creacion!",
+          "id_lista!",
+          "nombre"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "ListaDePrecios"
+    ]
+  },
+  "POST /medios-pago/": {
+    "body": {
+      "forma": {
+        "campos": [
+          "nombre!"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "201": {
+        "campos": [
+          "id_medio_pago!",
+          "nombre!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Medios de pago"
+    ]
+  },
+  "POST /movimientos-stock/": {
+    "body": {
+      "forma": {
+        "campos": [
+          "cantidad!",
+          "fecha",
+          "id_pedido",
+          "id_producto!",
+          "id_recorrido",
+          "observacion",
+          "tipo_movimiento!"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "201": {
+        "items": {
+          "campos": [
+            "cantidad!",
+            "fecha",
+            "id_movimiento!",
+            "id_pedido",
+            "id_producto!",
+            "id_recorrido",
+            "observacion",
+            "tipo_movimiento!"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Movimiento de Stock"
+    ]
+  },
+  "POST /pagos": {
+    "body": {
+      "forma": {
+        "campos": [
+          "client_uuid",
+          "fecha!",
+          "id_empresa!",
+          "id_medio_pago!",
+          "id_pedido",
+          "id_repartodia",
+          "idempotency_key",
+          "legajo",
+          "monto!",
+          "observacion",
+          "tipo_pago!"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "client_uuid",
+          "fecha!",
+          "id_empresa!",
+          "id_medio_pago!",
+          "id_pago!",
+          "id_pedido!",
+          "id_repartodia!",
+          "idempotency_key",
+          "legajo!",
+          "monto!",
+          "observacion!",
+          "tipo_pago!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Pagos"
+    ]
+  },
+  "POST /pagos/cancelar-deuda": {
+    "body": {
+      "forma": {
+        "campos": [
+          "id_medio_pago!",
+          "id_repartodia!",
+          "legajo!",
+          "monto!",
+          "observacion"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "deuda",
+          "estado",
+          "id_cuenta!",
+          "legajo!",
+          "numero_bidones",
+          "saldo",
+          "tipo_de_cuenta"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Pagos"
+    ]
+  },
+  "POST /pagos/egreso": {
+    "body": {
+      "forma": {
+        "campos": [
+          "fecha",
+          "id_medio_pago!",
+          "monto!",
+          "motivo!",
+          "observacion"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "client_uuid",
+          "fecha!",
+          "id_empresa!",
+          "id_medio_pago!",
+          "id_pago!",
+          "id_pedido!",
+          "id_repartodia!",
+          "idempotency_key",
+          "legajo!",
+          "monto!",
+          "observacion!",
+          "tipo_pago!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Pagos"
+    ]
+  },
+  "POST /pagos/ingreso": {
+    "body": {
+      "forma": {
+        "campos": [
+          "fecha",
+          "id_medio_pago!",
+          "monto!",
+          "observacion"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "client_uuid",
+          "fecha!",
+          "id_empresa!",
+          "id_medio_pago!",
+          "id_pago!",
+          "id_pedido!",
+          "id_repartodia!",
+          "idempotency_key",
+          "legajo!",
+          "monto!",
+          "observacion!",
+          "tipo_pago!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Pagos"
+    ]
+  },
+  "POST /pagos/libre": {
+    "body": {
+      "forma": {
+        "campos": [
+          "id_cuenta!",
+          "id_empresa!",
+          "id_medio_pago!",
+          "id_repartodia",
+          "legajo!",
+          "monto!",
+          "observacion"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "comprobante_url!",
+          "id_pago!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Pagos"
+    ]
+  },
+  "POST /pagos/{id_pago}/comprobante": {
+    "body": null,
+    "parametros": [
+      "id_pago:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": null,
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Pagos"
+    ]
+  },
+  "POST /pedidos/": {
+    "body": {
+      "forma": {
+        "campos": [
+          "client_uuid",
+          "estado",
+          "fecha!",
+          "id_cuenta",
+          "id_empresa!",
+          "id_medio_pago!",
+          "id_repartodia!",
+          "idempotency_key",
+          "items",
+          "legajo!",
+          "monto_abonado",
+          "monto_total!",
+          "observacion"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "201": {
+        "campos": [
+          "client_uuid",
+          "estado",
+          "fecha",
+          "id_cuenta",
+          "id_empresa",
+          "id_medio_pago!",
+          "id_pedido!",
+          "id_repartodia!",
+          "idempotency_key",
+          "items",
+          "legajo!",
+          "monto_abonado",
+          "monto_total!",
+          "observacion"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Pedidos"
+    ]
+  },
+  "POST /pedidos/{id_pedido}/comprobante": {
+    "body": null,
+    "parametros": [
+      "id_pedido:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": null,
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Pedidos"
+    ]
+  },
+  "POST /pedidos/{id_pedido}/confirmar": {
+    "body": {
+      "forma": {
+        "campos": [
+          "envases",
+          "id_repartodia!"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [
+      "id_pedido:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "client_uuid",
+          "estado",
+          "fecha",
+          "id_cuenta",
+          "id_empresa",
+          "id_medio_pago!",
+          "id_pedido!",
+          "id_repartodia!",
+          "idempotency_key",
+          "items",
+          "legajo!",
+          "monto_abonado",
+          "monto_total!",
+          "observacion"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Pedidos"
+    ]
+  },
+  "POST /personas/": {
+    "body": {
+      "forma": {
+        "campos": [
+          "apellido!",
+          "dni!",
+          "nombre!"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "201": {
+        "campos": [
+          "apellido!",
+          "dni!",
+          "nombre!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Personas"
+    ]
+  },
+  "POST /productos/": {
+    "body": {
+      "forma": {
+        "campos": [
+          "es_envase",
+          "estado",
+          "id_empresa_stock",
+          "litros",
+          "nombre!",
+          "observacion",
+          "stock_inicial",
+          "tipo_dispenser"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "201": {
+        "campos": [
+          "es_envase",
+          "estado",
+          "id_empresa_stock",
+          "id_producto!",
+          "litros",
+          "nombre",
+          "observacion",
+          "stock_inicial",
+          "tipo_dispenser"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Producto"
+    ]
+  },
+  "POST /recorridos/": {
+    "body": {
+      "forma": {
+        "campos": [
+          "detalle_stock_inicial!",
+          "dinero_inicial",
+          "id_camion",
+          "id_empleado",
+          "id_repartodia",
+          "observacion",
+          "stock_inicial"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "201": {
+        "campos": [
+          "dinero_inicial",
+          "id_camion",
+          "id_empleado",
+          "id_recorrido!",
+          "id_repartodia",
+          "observacion",
+          "stock_inicial"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Recorrido"
+    ]
+  },
+  "POST /repartos-dia/": {
+    "body": {
+      "forma": {
+        "campos": [
+          "fecha!",
+          "id_empresa",
+          "id_usuario!",
+          "observacion"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "201": {
+        "campos": [
+          "fecha!",
+          "id_empresa!",
+          "id_repartodia!",
+          "id_usuario!",
+          "observacion",
+          "total_efectivo",
+          "total_recaudado",
+          "total_virtual"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Reparto Día"
+    ]
+  },
+  "POST /repartos-dia/{id_repartodia}/cerrar": {
+    "body": null,
+    "parametros": [
+      "id_repartodia:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "fecha!",
+          "id_empresa!",
+          "id_repartodia!",
+          "id_usuario!",
+          "observacion",
+          "total_efectivo",
+          "total_recaudado",
+          "total_virtual"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Reparto Día"
+    ]
+  },
+  "POST /servicios/clientes/{legajo}/alquiler-dispenser": {
+    "body": null,
+    "parametros": [
+      "legajo:path:req",
+      "monto_mensual:query:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": null,
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Servicios"
+    ]
+  },
+  "POST /servicios/periodos/{id_periodo}/pagar": {
+    "body": null,
+    "parametros": [
+      "id_cuenta:query:opt",
+      "id_medio_pago:query:opt",
+      "id_periodo:path:req",
+      "legajo:query:req",
+      "observacion:query:opt",
+      "usar_saldo:query:opt"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": null,
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Servicios"
+    ]
+  },
+  "POST /usuarios/": {
+    "body": {
+      "forma": {
+        "campos": [
+          "contraseña!",
+          "legajo_cliente",
+          "legajo_empleado",
+          "nombre_usuario!"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [],
+    "protegido": true,
+    "respuestas": {
+      "201": {
+        "campos": [
+          "id_usuario!",
+          "legajo_cliente",
+          "legajo_empleado",
+          "nombre_usuario!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Usuarios"
+    ]
+  },
+  "POST /visitas/{legajo}": {
+    "body": {
+      "forma": {
+        "campos": [
+          "client_uuid",
+          "envases",
+          "estado!",
+          "fecha",
+          "id_repartodia",
+          "idempotency_key"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "201": {
+        "campos": [
+          "client_uuid",
+          "estado!",
+          "fecha",
+          "id_visita!",
+          "idempotency_key",
+          "legajo!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Visitas"
+    ]
+  },
+  "PUT /clientes/{legajo}": {
+    "body": {
+      "forma": {
+        "campos": [
+          "observacion",
+          "persona"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "dias_semanas",
+          "dni!",
+          "legajo!",
+          "observacion",
+          "persona"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Clientes"
+    ]
+  },
+  "PUT /clientes/{legajo}/cuentas/{id_cuenta}": {
+    "body": {
+      "forma": {
+        "campos": [
+          "deuda",
+          "estado",
+          "id_cuenta",
+          "numero_bidones",
+          "saldo",
+          "tipo_de_cuenta"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [
+      "id_cuenta:path:req",
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "deuda",
+          "estado",
+          "id_cuenta!",
+          "legajo!",
+          "numero_bidones",
+          "saldo",
+          "tipo_de_cuenta"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "ClienteCuenta"
+    ]
+  },
+  "PUT /clientes/{legajo}/detalle": {
+    "body": {
+      "forma": {
+        "campos": [
+          "cuentas",
+          "dias_semanas",
+          "direcciones",
+          "emails",
+          "persona",
+          "telefonos"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "cuentas",
+          "dias_semanas",
+          "dias_visita",
+          "direcciones",
+          "dni!",
+          "emails",
+          "historicos",
+          "legajo!",
+          "observacion",
+          "pedidos",
+          "persona",
+          "productos",
+          "telefonos",
+          "turno_visita"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Clientes"
+    ]
+  },
+  "PUT /clientes/{legajo}/direcciones/{id_direccion}": {
+    "body": {
+      "forma": {
+        "campos": [
+          "direccion",
+          "entre_calle1",
+          "entre_calle2",
+          "id_direccion",
+          "latitud_longitud",
+          "localidad",
+          "observacion",
+          "tipo",
+          "zona"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [
+      "id_direccion:path:req",
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "direccion",
+          "entre_calle1",
+          "entre_calle2",
+          "id_direccion!",
+          "latitud_longitud",
+          "legajo!",
+          "localidad",
+          "observacion",
+          "tipo",
+          "zona"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Direcciones Cliente"
+    ]
+  },
+  "PUT /clientes/{legajo}/emails/{id_mail}": {
+    "body": {
+      "forma": {
+        "campos": [
+          "estado",
+          "id_mail",
+          "mail",
+          "observacion"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [
+      "id_mail:path:req",
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "estado",
+          "id_mail!",
+          "legajo!",
+          "mail",
+          "observacion"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Emails Cliente"
+    ]
+  },
+  "PUT /clientes/{legajo}/productos/{id_producto}": {
+    "body": {
+      "forma": {
+        "campos": [
+          "cantidad!",
+          "estado",
+          "fecha_entrega"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [
+      "id_producto:path:req",
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "cantidad!",
+          "estado",
+          "fecha_entrega",
+          "id_producto!",
+          "nombre!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Clientes"
+    ]
+  },
+  "PUT /clientes/{legajo}/telefonos/{id_telefono}": {
+    "body": {
+      "forma": {
+        "campos": [
+          "estado",
+          "id_telefono",
+          "nro_telefono",
+          "observacion"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [
+      "id_telefono:path:req",
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "estado",
+          "id_telefono!",
+          "legajo!",
+          "nro_telefono",
+          "observacion"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Teléfonos Cliente"
+    ]
+  },
+  "PUT /combos/{id_combo}": {
+    "body": {
+      "forma": {
+        "campos": [
+          "descripcion",
+          "estado",
+          "nombre",
+          "productos"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [
+      "id_combo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "descripcion",
+          "estado",
+          "id_combo!",
+          "id_empresa!",
+          "nombre!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Combo"
+    ]
+  },
+  "PUT /combos/{id_combo}/productos": {
+    "body": {
+      "forma": {
+        "items": {
+          "campos": [
+            "cantidad!",
+            "id_producto!"
+          ],
+          "tipo": "objeto"
+        },
+        "tipo": "array"
+      },
+      "requerido": true
+    },
+    "parametros": [
+      "id_combo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "descripcion",
+          "estado",
+          "id_combo!",
+          "id_empresa!",
+          "nombre!",
+          "productos"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Combo"
+    ]
+  },
+  "PUT /empleados/{legajo}": {
+    "body": {
+      "forma": {
+        "campos": [
+          "fecha_ingreso",
+          "persona"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [
+      "legajo:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "dni!",
+          "fecha_ingreso",
+          "legajo!",
+          "persona"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Empleados"
+    ]
+  },
+  "PUT /listas-precios/{id_lista}": {
+    "body": {
+      "forma": {
+        "campos": [
+          "estado",
+          "nombre"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [
+      "id_lista:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "estado",
+          "fecha_creacion!",
+          "id_lista!",
+          "nombre"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "ListaDePrecios"
+    ]
+  },
+  "PUT /listas-precios/{id_lista}/precios-combos/{id_combo}": {
+    "body": {
+      "forma": {
+        "campos": [
+          "id_combo",
+          "id_lista",
+          "precio!"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [
+      "id_combo:path:req",
+      "id_lista:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "id_combo!",
+          "id_lista!",
+          "precio!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "ListaDePrecios"
+    ]
+  },
+  "PUT /listas-precios/{id_lista}/precios-servicios/{id_cliente_servicio}": {
+    "body": {
+      "forma": {
+        "campos": [
+          "id_cliente_servicio",
+          "id_lista",
+          "precio!"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [
+      "id_cliente_servicio:path:req",
+      "id_lista:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "id_cliente_servicio!",
+          "id_lista!",
+          "precio!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "ListaDePrecios"
+    ]
+  },
+  "PUT /listas-precios/{id_lista}/precios/{id_producto}": {
+    "body": {
+      "forma": {
+        "campos": [
+          "id_lista!",
+          "id_producto!",
+          "precio!"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [
+      "id_lista:path:req",
+      "id_producto:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "id_lista!",
+          "id_producto!",
+          "precio!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "ListaDePrecios"
+    ]
+  },
+  "PUT /personas/{dni}": {
+    "body": {
+      "forma": {
+        "campos": [
+          "apellido!",
+          "nombre!"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [
+      "dni:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "apellido!",
+          "dni!",
+          "nombre!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Personas"
+    ]
+  },
+  "PUT /productos/{id_producto}": {
+    "body": {
+      "forma": {
+        "campos": [
+          "es_envase",
+          "estado",
+          "id_empresa_stock",
+          "litros",
+          "nombre",
+          "observacion",
+          "stock_inicial",
+          "tipo_dispenser"
+        ],
+        "tipo": "objeto"
+      },
+      "requerido": true
+    },
+    "parametros": [
+      "id_producto:path:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "es_envase",
+          "estado",
+          "id_empresa_stock",
+          "id_producto!",
+          "litros",
+          "nombre",
+          "observacion",
+          "stock_inicial",
+          "tipo_dispenser"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Producto"
+    ]
+  },
+  "PUT /stock/set": {
+    "body": null,
+    "parametros": [
+      "cantidad:query:req",
+      "id_empresa:query:req",
+      "id_producto:query:req"
+    ],
+    "protegido": true,
+    "respuestas": {
+      "200": {
+        "campos": [
+          "cantidad",
+          "id_empresa!",
+          "id_producto!",
+          "id_stock!"
+        ],
+        "tipo": "objeto"
+      },
+      "422": {
+        "campos": [
+          "detail"
+        ],
+        "tipo": "objeto"
+      }
+    },
+    "tags": [
+      "Stock"
+    ]
+  }
+}
