@@ -1,68 +1,65 @@
 """
-Registro de modelos.
+Registro de modelos. Generado por scripts/migrar_estructura.py.
 
-Este archivo existe por una sola razon: cuando los modelos se reparten en
-app/features/*/models.py, nada los importa hasta que alguien usa el feature.
-Alembic autogenerate lee Base.metadata en frio, ve pocas tablas o ninguna, y
-genera una migracion que DROPEA todo lo que no encontro.
+Alembic lee Base.metadata en frio. Si un modelo no esta importado
+aca, autogenerate no lo ve y genera un drop_table de su tabla.
 
-Importar todo aca, y hacer que alembic/env.py importe este modulo, resuelve
-el problema. Es el equivalente al app/models/__init__.py que tenes hoy.
-
-Regla: cada vez que agregues un modelo, agregalo aca. Si te olvidas, el test
-tests/test_models_registry.py te avisa.
+Cada modelo nuevo se agrega aca. El test tests/test_models_registry.py
+avisa si te olvidas.
 """
 
 from __future__ import annotations
 
 # ruff: noqa: F401
-# Los imports "sin usar" son el punto del archivo.
+# Los imports 'sin usar' son el punto del archivo.
 
 from app.db.base import Base
 
-# ----------------------------------------------------------------------
-# Este bloque se completa en el paso 2, cuando el script mueva los modelos.
-# Mientras tanto sigue valiendo el __init__.py de app/models.
-#
-# Asi va a quedar:
-#
-# from app.features.usuarios.models import Rol, Usuario, UsuarioRol
-# from app.features.personas.models import Persona
-# from app.features.empresas.models import CuentaBancariaEmpresa, Empresa
-# from app.features.maestros.models import (
-#     DiaSemana, MedioPago, TipoEvento, TipoMovimientoCaja,
-# )
-# from app.features.clientes.models import (
-#     Cliente, ClienteCuenta, ClienteDiaSemana, DireccionCliente,
-#     MailCliente, ProductoCliente, TelefonoCliente,
-# )
-# from app.features.catalogo.productos.models import Producto
-# from app.features.catalogo.combos.models import Combo, ComboProducto
-# from app.features.catalogo.servicios.models import (
-#     ClienteServicio, ClienteServicioPeriodo,
-# )
-# from app.features.catalogo.listas_precios.models import (
-#     ListaDePrecios, ListaPrecioCombo, ListaPrecioProducto, ListaPrecioServicio,
-# )
-# from app.features.inventario.stock.models import Stock
-# from app.features.inventario.movimientos.models import MovimientoStock
-# from app.features.inventario.envases.models import MovimientoEnvaseCliente
-# from app.features.pedidos.models import Pedido, PedidoProducto
-# from app.features.pagos.models import Pago
-# from app.features.caja.models import CajaEmpresa
-# from app.features.repartos.camiones.models import CamionReparto
-# from app.features.repartos.recorridos.models import Recorrido
-# from app.features.repartos.repartos_dia.models import (
-#     ClienteRepartoDia, RepartoDia,
-# )
-# from app.features.repartos.visitas.models import Visita
-# from app.features.documentos.models import Documentos
-# from app.features.auditoria.models import Historico
-# ----------------------------------------------------------------------
+from app.features.auditoria.models.historico import Historico
+from app.features.caja.models.caja_empresa import CajaEmpresa
+from app.features.catalogo.combos.models.combo import Combo
+from app.features.catalogo.combos.models.combo_producto import ComboProducto
+from app.features.catalogo.listas_precios.models.lista_de_precios import ListaDePrecios
+from app.features.catalogo.listas_precios.models.lista_precio_combo import ListaPrecioCombo
+from app.features.catalogo.listas_precios.models.lista_precio_producto import ListaPrecioProducto
+from app.features.catalogo.listas_precios.models.lista_precio_servicio import ListaPrecioServicio
+from app.features.catalogo.productos.models.producto import Producto
+from app.features.catalogo.servicios.models.cliente_servicio import ClienteServicio
+from app.features.catalogo.servicios.models.cliente_servicio_periodo import ClienteServicioPeriodo
+from app.features.clientes.models.cliente import Cliente
+from app.features.clientes.models.cliente_cuenta import ClienteCuenta
+from app.features.clientes.models.direccion_cliente import DireccionCliente
+from app.features.clientes.models.email_cliente import MailCliente
+from app.features.clientes.models.producto_cliente import ProductoCliente
+from app.features.clientes.models.telefono_cliente import TelefonoCliente
+from app.features.documentos.models.documentos import Documentos
+from app.features.empleados.models.empleado import Empleado
+from app.features.empresas.models.cuenta_bancaria_empresa import CuentaBancariaEmpresa
+from app.features.empresas.models.empresa import Empresa
+from app.features.inventario.envases.models.movimiento_envase_cliente import MovimientoEnvaseCliente
+from app.features.inventario.movimientos.models.movimiento_stock import MovimientoStock
+from app.features.inventario.stock.models.stock import Stock
+from app.features.maestros.models.dia_semana import DiaSemana
+from app.features.maestros.models.medio_pago import MedioPago
+from app.features.maestros.models.tipo_evento import TipoEvento
+from app.features.maestros.models.tipo_movimiento_caja import TipoMovimientoCaja
+from app.features.pagos.models.pago import Pago
+from app.features.pedidos.models.pedido import IDEMPOTENCY_KEY_LEN, Pedido
+from app.features.pedidos.models.pedido_producto import PedidoProducto
+from app.features.personas.models.persona import Persona
+from app.features.repartos.agenda.models.cliente_dia_semana import ClienteDiaSemana
+from app.features.repartos.camiones.models.camion_reparto import CamionReparto
+from app.features.repartos.recorridos.models.recorrido import Recorrido
+from app.features.repartos.repartos_dia.models.cliente_reparto_dia import ClienteRepartoDia
+from app.features.repartos.repartos_dia.models.reparto_dia import RepartoDia
+from app.features.repartos.visitas.models.visita import Visita
+from app.features.usuarios.models.rol import Rol
+from app.features.usuarios.models.usuario import Usuario
+from app.features.usuarios.models.usuario_rol import UsuarioRol
 
 
 def tablas_registradas() -> list[str]:
-    """Nombres de las tablas que Alembic va a ver. Util para depurar."""
+    """Nombres de las tablas que Alembic va a ver."""
     return sorted(Base.metadata.tables.keys())
 
 

@@ -175,6 +175,35 @@ archivo va al feature equivocado se descubre semanas después.
 Este paso **no cambia una sola línea de lógica**. Solo mueve archivos y
 ajusta imports.
 
+**HECHO, 2026-09-14.** 141 archivos movidos (los 136 originales + los 5 que
+faltaban en `ASIGNACION`: `clienteDetalle`→clientes, `stockDetalle`→
+inventario/stock, `enums_cliente`→clientes, `enumsStock`→
+inventario/movimientos, `repartosScheduler`→repartos/repartos_dia — esto
+último decidido con el usuario porque el script no tiene noción de
+`app/shared/`, ver Deuda técnica). De paso se encontraron dos bugs en el
+propio script, arreglados a mano después de mover:
+
+1. `app/db/base.py` quedó con `from app.db.base import Base` (auto-import,
+   circular). El rewriter de imports no distingue este archivo puente del
+   resto: reescribe *cualquier* `from app.core.database import Base`,
+   incluido el suyo propio. Se volvió a `from app.core.database import Base`.
+2. `app/features/catalogo/combos/router.py` tenía
+   `from app.services import comboService` (import de submódulo como
+   namespace, no de un símbolo). El rewriter solo resuelve
+   `from app.X import simbolo`, no este patrón. Se cambió a
+   `from app.features.catalogo.combos import service as comboService`.
+
+Manual, como indica el propio script al terminar: `get_cliente_or_404_dep`
+se movió de `app/api/deps.py` a `app/features/clientes/dependencies.py`
+(único contenido del archivo); `app/api/deps.py` se borró. Carpetas viejas
+(`app/models`, `app/routers`, `app/services`, `app/schemas`) borradas,
+quedaron vacías. Verificado: `pytest tests/` en verde (8 passed, 1 xfailed
+— ya no hay skipped, `app/features` existe y `test_models_registry.py`
+corre de verdad), `import app.main` sin errores, y en vivo: login +
+`/empresas/` + `/clientes/` con token devuelven 200.
+
+Commit propio: `paso 2: mover a estructura por features`.
+
 ### Paso 3 — Limpieza, un feature por commit
 
 Recién acá se toca comportamiento. Ver "Deuda técnica conocida" abajo.

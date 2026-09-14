@@ -117,12 +117,8 @@ def ejecutar_para_tenants(
 
 
 def _crear_repartos_del_dia() -> None:
-    """Envuelve tu servicio actual.
-
-    TODO migracion paso 2: pasa a
-    app/features/repartos/repartos_dia/service.py, actualiza este import.
-    """
-    from app.services.repartosSchedulerService import crear_repartos_del_dia_automaticos
+    """Envuelve el service de repartos_dia."""
+    from app.features.repartos.repartos_dia.services.repartos_scheduler import crear_repartos_del_dia_automaticos
 
     with sesion_tenant() as db:
         crear_repartos_del_dia_automaticos(db)

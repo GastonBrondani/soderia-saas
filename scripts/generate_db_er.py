@@ -25,8 +25,7 @@ if "dotenv" not in sys.modules:
     _m.load_dotenv = lambda *a, **k: None
     sys.modules["dotenv"] = _m
 
-from app.core.database import Base
-
+from app.db.base import Base
 OUTPUT = Path(ROOT) / "diagrams" / "db_er.mmd"
 
 

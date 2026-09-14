@@ -11,14 +11,14 @@ from sqlalchemy import and_, func, select, update
 from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
-from app.models.cliente import Cliente
-from app.models.persona import Persona
-from app.models.direccionCliente import DireccionCliente
-from app.models.telefonoCliente import TelefonoCliente
-from app.models.emailCliente import MailCliente
-from app.models.clienteCuenta import ClienteCuenta
-from app.models.clienteDiaSemana import ClienteDiaSemana
-from app.models.diaSemana import DiaSemana
+from app.features.clientes.models.cliente import Cliente
+from app.features.personas.models.persona import Persona
+from app.features.clientes.models.direccion_cliente import DireccionCliente
+from app.features.clientes.models.telefono_cliente import TelefonoCliente
+from app.features.clientes.models.email_cliente import MailCliente
+from app.features.clientes.models.cliente_cuenta import ClienteCuenta
+from app.features.repartos.agenda.models.cliente_dia_semana import ClienteDiaSemana
+from app.features.maestros.models.dia_semana import DiaSemana
 
 
 EMPRESA_ID_DEFAULT = 1

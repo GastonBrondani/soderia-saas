@@ -185,8 +185,7 @@ def get_current_user(
 
     # Import diferido: el modelo vive en features/ y features importa core.
     # Hacerlo arriba crearia un ciclo.
-    # TODO migracion paso 2: from app.features.usuarios.models import Usuario
-    from app.models.usuario import Usuario
+    from app.features.usuarios.models.usuario import Usuario
 
     usuario = db.get(Usuario, user_id)
     if usuario is None:
