@@ -4,11 +4,11 @@ from __future__ import annotations
 from contextlib import contextmanager
 from typing import List, Optional
 
-from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from app.core.exceptions import AppError, NotFound
 from app.features.catalogo.combos.models.combo import Combo
 from app.features.catalogo.combos.models.combo_producto import ComboProducto
 from app.features.catalogo.productos.models.producto import Producto
@@ -38,16 +38,15 @@ def _tx(db: Session):
 def _get_combo_or_404(db: Session, id_combo: int) -> Combo:
     obj = db.get(Combo, id_combo)
     if not obj:
-        raise HTTPException(status_code=404, detail="Combo no encontrado")
+        raise NotFound("Combo no encontrado")
     return obj
 
 
 def _validar_sin_duplicados(ids_productos: List[int]) -> None:
     repetidos = sorted({x for x in ids_productos if ids_productos.count(x) > 1})
     if repetidos:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Productos repetidos en la composición del combo: {repetidos}",
+        raise AppError(
+            f"Productos repetidos en la composición del combo: {repetidos}",
         )
 
 
@@ -61,10 +60,7 @@ def _validar_productos_existentes(db: Session, ids_productos: List[int]) -> None
 
     faltantes = sorted(set(ids_productos) - set(existentes))
     if faltantes:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Productos inexistentes: {faltantes}",
-        )
+        raise AppError(f"Productos inexistentes: {faltantes}")
 
 
 # ----------------- CRUD -----------------
@@ -98,12 +94,12 @@ def crear_combo(db: Session, payload: ComboCreate) -> Combo:
         db.refresh(obj)
         return obj
 
-    except HTTPException:
+    except AppError:
         db.rollback()
         raise
-    except SQLAlchemyError as e:
+    except SQLAlchemyError:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error creando combo: {e}")
+        raise
 
 
 def listar_combos(
@@ -186,12 +182,12 @@ def actualizar_combo(db: Session, id_combo: int, payload: ComboUpdate) -> Combo:
         db.refresh(obj)
         return obj
 
-    except HTTPException:
+    except AppError:
         db.rollback()
         raise
-    except SQLAlchemyError as e:
+    except SQLAlchemyError:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error actualizando combo: {e}")
+        raise
 
 
 def eliminar_combo(db: Session, id_combo: int) -> None:
@@ -202,9 +198,9 @@ def eliminar_combo(db: Session, id_combo: int) -> None:
     try:
         db.delete(obj)
         db.commit()
-    except SQLAlchemyError as e:
+    except SQLAlchemyError:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error eliminando combo: {e}")
+        raise
     
 def actualizar_composicion(
     db: Session,
