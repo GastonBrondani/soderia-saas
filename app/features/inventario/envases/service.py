@@ -4,8 +4,8 @@ from typing import Optional
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from fastapi import HTTPException
 
+from app.core.exceptions import AppError, BusinessRuleViolation, NotFound
 from app.features.clientes.models.producto_cliente import ProductoCliente
 from app.features.inventario.envases.models.movimiento_envase_cliente import MovimientoEnvaseCliente
 from app.features.catalogo.productos.models.producto import Producto
@@ -20,9 +20,9 @@ class EnvaseClienteService:
     def _get_producto_envase(db: Session, id_producto: int) -> Producto:
         prod = db.get(Producto, id_producto)
         if prod is None:
-            raise HTTPException(status_code=404, detail=f"Producto {id_producto} inexistente.")
+            raise NotFound(f"Producto {id_producto} inexistente.")
         if not prod.es_envase:
-            raise HTTPException(status_code=400, detail=f"El producto {id_producto} no es un envase.")
+            raise AppError(f"El producto {id_producto} no es un envase.")
         return prod
 
     @staticmethod
@@ -41,7 +41,7 @@ class EnvaseClienteService:
     ) -> ProductoCliente:
 
         if delta == 0:
-            raise HTTPException(status_code=400, detail="El delta no puede ser 0.")
+            raise AppError("El delta no puede ser 0.")
 
         now = fecha or datetime.now()
 
@@ -58,9 +58,8 @@ class EnvaseClienteService:
 
         if row is None:
             if delta < 0:
-                raise HTTPException(
-                    status_code=409,
-                    detail="No se puede retirar un envase que el cliente nunca recibió."
+                raise BusinessRuleViolation(
+                    "No se puede retirar un envase que el cliente nunca recibió."
                 )
             row = ProductoCliente(
                 legajo=legajo,
@@ -74,9 +73,8 @@ class EnvaseClienteService:
 
         nuevo = row.cantidad + delta
         if nuevo < 0:
-            raise HTTPException(
-                status_code=409,
-                detail=f"Saldo insuficiente. El cliente tiene {row.cantidad} unidad/es del envase {id_producto}."
+            raise BusinessRuleViolation(
+                f"Saldo insuficiente. El cliente tiene {row.cantidad} unidad/es del envase {id_producto}."
             )
 
         row.cantidad = nuevo
@@ -142,15 +140,13 @@ class EnvaseClienteService:
     ) -> ProductoCliente | None:
 
         if entregados < 0 or devueltos < 0:
-            raise HTTPException(
-                status_code=400,
-                detail="entregados y devueltos no pueden ser negativos.",
+            raise AppError(
+                "entregados y devueltos no pueden ser negativos.",
             )
 
         if entregados == 0 and devueltos == 0:
-            raise HTTPException(
-                status_code=400,
-                detail="Debe venir al menos un envase entregado o devuelto.",
+            raise AppError(
+                "Debe venir al menos un envase entregado o devuelto.",
             )
 
         now = fecha or datetime.now()
@@ -173,15 +169,13 @@ class EnvaseClienteService:
             ).scalar_one_or_none()
 
             if stock is None:
-                raise HTTPException(
-                    status_code=409,
-                    detail=f"No hay stock para el envase {id_producto}.",
+                raise BusinessRuleViolation(
+                    f"No hay stock para el envase {id_producto}.",
                 )
 
             if stock.cantidad < entregados:
-                raise HTTPException(
-                    status_code=409,
-                    detail=f"Stock insuficiente para el envase {id_producto}.",
+                raise BusinessRuleViolation(
+                    f"Stock insuficiente para el envase {id_producto}.",
                 )
 
             stock.cantidad -= entregados
