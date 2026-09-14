@@ -2,8 +2,8 @@ from datetime import date, datetime
 from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
-from fastapi import HTTPException
 
+from app.core.exceptions import AppError, BusinessRuleViolation, Conflict, Forbidden, NotFound
 from app.features.clientes.models.cliente_cuenta import ClienteCuenta
 from app.features.catalogo.servicios.models.cliente_servicio import ClienteServicio
 from app.features.catalogo.servicios.models.cliente_servicio_periodo import ClienteServicioPeriodo
@@ -32,23 +32,17 @@ def _resolver_cuenta(
     )
 
     if not ids:
-        raise HTTPException(
-            status_code=409, detail="El cliente no tiene cuenta creada."
-        )
+        raise Conflict("El cliente no tiene cuenta creada.")
 
     if id_cuenta is None:
         if len(ids) > 1:
-            raise HTTPException(
-                status_code=400,
-                detail="El cliente tiene múltiples cuentas. Enviar id_cuenta.",
+            raise AppError(
+                "El cliente tiene múltiples cuentas. Enviar id_cuenta.",
             )
         id_cuenta = ids[0]
     else:
         if id_cuenta not in ids:
-            raise HTTPException(
-                status_code=404,
-                detail="Cuenta no encontrada para ese cliente.",
-            )
+            raise NotFound("Cuenta no encontrada para ese cliente.")
 
     stmt = (
         select(ClienteCuenta)
@@ -65,7 +59,7 @@ def _resolver_cuenta(
 
     cuenta = db.execute(stmt).scalar_one_or_none()
     if cuenta is None:
-        raise HTTPException(status_code=404, detail="Cuenta no encontrada.")
+        raise NotFound("Cuenta no encontrada.")
     return cuenta
 
 
@@ -84,7 +78,7 @@ def crear_servicio_alquiler_dispenser(
         )
     ).scalar_one_or_none()
     if existe:
-        raise HTTPException(409, "El cliente ya tiene un alquiler de dispenser activo.")
+        raise Conflict("El cliente ya tiene un alquiler de dispenser activo.")
 
     srv = ClienteServicio(
         legajo=legajo,
@@ -251,7 +245,7 @@ def pagar_periodo_servicio(
     ).scalar_one_or_none()
 
     if not per:
-        raise HTTPException(status_code=404, detail="Periodo inexistente.")
+        raise NotFound("Periodo inexistente.")
 
     srv = db.execute(
         select(ClienteServicio).where(
@@ -260,20 +254,17 @@ def pagar_periodo_servicio(
     ).scalar_one()
 
     if srv.legajo != legajo:
-        raise HTTPException(
-            status_code=403, detail="El periodo no pertenece al cliente."
-        )
+        raise Forbidden("El periodo no pertenece al cliente.")
 
     if per.estado == "PAGADO":
-        raise HTTPException(status_code=409, detail="El periodo ya está pagado.")
+        raise Conflict("El periodo ya está pagado.")
 
     cuenta = _resolver_cuenta(db, legajo, id_cuenta=id_cuenta, lock=True)
 
     monto = Decimal(per.monto_pendiente or per.monto or Decimal("0"))
     if monto <= 0:
-        raise HTTPException(
-            status_code=409,
-            detail="El período no tiene monto pendiente para cobrar.",
+        raise BusinessRuleViolation(
+            "El período no tiene monto pendiente para cobrar.",
         )
 
     pago = None
@@ -281,18 +272,16 @@ def pagar_periodo_servicio(
     if usar_saldo:
         saldo = Decimal(cuenta.saldo or Decimal("0"))
         if saldo < monto:
-            raise HTTPException(
-                status_code=409,
-                detail="Saldo insuficiente para cubrir el período.",
+            raise BusinessRuleViolation(
+                "Saldo insuficiente para cubrir el período.",
             )
 
         cuenta.saldo = saldo - monto
 
     else:
         if id_medio_pago is None:
-            raise HTTPException(
-                status_code=400,
-                detail="id_medio_pago es obligatorio salvo usar_saldo.",
+            raise AppError(
+                "id_medio_pago es obligatorio salvo usar_saldo.",
             )
 
         pago = PagoService.crear(
@@ -343,7 +332,7 @@ def actualizar_monto_servicio(
     actualizar_periodos_no_pagados: bool = True,
 ):
     if nuevo_monto <= 0:
-        raise HTTPException(status_code=400, detail="monto_mensual debe ser > 0")
+        raise AppError("monto_mensual debe ser > 0")
 
     vigencia = mes_inicio(aplicar_desde or date.today())
 
@@ -355,9 +344,9 @@ def actualizar_monto_servicio(
     ).scalar_one_or_none()
 
     if not srv:
-        raise HTTPException(status_code=404, detail="Servicio inexistente.")
+        raise NotFound("Servicio inexistente.")
     if not srv.activo:
-        raise HTTPException(status_code=409, detail="El servicio está inactivo.")
+        raise BusinessRuleViolation("El servicio está inactivo.")
 
     # 1) actualizar precio base del servicio
     monto_anterior = Decimal(str(srv.monto_mensual))
@@ -412,9 +401,9 @@ def dar_de_baja_dispenser(db: Session, id_cliente_servicio: int) -> ClienteServi
     ).scalar_one_or_none()
 
     if not srv:
-        raise HTTPException(status_code=404, detail="Servicio inexistente.")
+        raise NotFound("Servicio inexistente.")
     if not srv.activo:
-        raise HTTPException(status_code=409, detail="El servicio ya está inactivo.")
+        raise Conflict("El servicio ya está inactivo.")
 
     srv.activo = False
 
