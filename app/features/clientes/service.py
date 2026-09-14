@@ -1,7 +1,8 @@
 from sqlalchemy import func, select, delete, update
 from sqlalchemy.orm import Session, joinedload, selectinload
-from fastapi import HTTPException
 from typing import Any, Optional
+
+from app.core.exceptions import AppError, NotFound
 
 
 #Modelos utilizados
@@ -39,7 +40,7 @@ class ClienteService:
                                         .where(Cliente.legajo == legajo))
         cliente=db.execute(stmt).scalars().first()
         if not cliente:
-            raise HTTPException(status_code=404, detail="Cliente no encontrado")
+            raise NotFound("Cliente no encontrado")
         
         return ClienteDetalleOut.model_validate(cliente)
     
@@ -63,7 +64,7 @@ class ClienteService:
         )
         cliente = db.execute(stmt).scalars().first()
         if not cliente:
-            raise HTTPException(status_code=404, detail="Cliente no encontrado")
+            raise NotFound("Cliente no encontrado")
 
         # Acumulador de cambios para el histórico
         cambios: dict[str, Any] = {}
@@ -289,7 +290,7 @@ def calcular_orden(
 
     if posicion == "despues":
         if not despues_de_legajo:
-            raise HTTPException(400, "Falta despues_de_legajo")
+            raise AppError("Falta despues_de_legajo")
 
         orden_ref = db.execute(
             select(ClienteDiaSemana.orden)
