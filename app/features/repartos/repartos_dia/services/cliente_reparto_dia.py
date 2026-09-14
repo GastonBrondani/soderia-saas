@@ -5,14 +5,10 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Literal, Optional
 
-from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.features.repartos.repartos_dia.models.cliente_reparto_dia import ClienteRepartoDia
-
-
-#from app.features.repartos.repartos_dia.schemas.cliente_reparto_dia import (ClienteRepartoDiaCreate,ClienteRepartoDiaUpdate,)
 
 
 class ClienteRepartoDiaService:

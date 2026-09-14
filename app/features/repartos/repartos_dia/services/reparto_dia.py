@@ -7,8 +7,7 @@ from sqlalchemy import select, update, and_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from fastapi import HTTPException
-
+from app.core.exceptions import AppError, Conflict, NotFound
 from app.features.repartos.repartos_dia.models.reparto_dia import RepartoDia
 
 
@@ -23,7 +22,7 @@ class RepartoDiaService:
     def get(db: Session, id_repartodia: int) -> RepartoDia:
         entity = db.get(RepartoDia, id_repartodia)
         if not entity:
-            raise HTTPException(status_code=404, detail="Reparto día no encontrado.")
+            raise NotFound("Reparto día no encontrado.")
         return entity
 
     
@@ -45,10 +44,7 @@ class RepartoDiaService:
 
         entity = db.execute(stmt).scalars().first()
         if not entity:
-            raise HTTPException(
-                status_code=404,
-                detail="Reparto día no encontrado para esa fecha.",
-            )
+            raise NotFound("Reparto día no encontrado para esa fecha.")
         return entity
 
     # ---------- Escritura ----------
@@ -73,9 +69,8 @@ class RepartoDiaService:
                 )
             ).first()
             if dup:
-                raise HTTPException(
-                    status_code=409,
-                    detail="Ya existe un reparto para ese usuario y fecha en esa empresa.",
+                raise Conflict(
+                    "Ya existe un reparto para ese usuario y fecha en esa empresa.",
                 )
 
         entity = RepartoDia(
@@ -90,9 +85,8 @@ class RepartoDiaService:
             db.refresh(entity)
         except IntegrityError as e:
             db.rollback()
-            raise HTTPException(
-                status_code=409,
-                detail="No se pudo crear el reparto del día (FK o duplicado).",
+            raise Conflict(
+                "No se pudo crear el reparto del día (FK o duplicado).",
             ) from e
         return entity
 
@@ -122,9 +116,8 @@ class RepartoDiaService:
             db.refresh(entity)
         except IntegrityError as e:
             db.rollback()
-            raise HTTPException(
-                status_code=409,
-                detail="No se pudo actualizar el reparto (FK o unicidad).",
+            raise Conflict(
+                "No se pudo actualizar el reparto (FK o unicidad).",
             ) from e
         return entity
 
@@ -136,9 +129,8 @@ class RepartoDiaService:
             db.commit()
         except IntegrityError as e:
             db.rollback()
-            raise HTTPException(
-                status_code=409,
-                detail="No se puede eliminar: existen registros relacionados.",
+            raise Conflict(
+                "No se puede eliminar: existen registros relacionados.",
             ) from e
 
     # ---------- Operaciones de negocio ----------
@@ -154,7 +146,7 @@ class RepartoDiaService:
         Suma efectivo/virtual y total en una sola sentencia SQL (atómico).
         """
         if efectivo < 0 or virtual < 0:
-            raise HTTPException(status_code=400, detail="Los importes no pueden ser negativos.")
+            raise AppError("Los importes no pueden ser negativos.")
 
         total = efectivo + virtual
 
@@ -174,11 +166,11 @@ class RepartoDiaService:
             db.commit()
         except IntegrityError as e:
             db.rollback()
-            raise HTTPException(status_code=409, detail="No se pudo registrar el cobro.") from e
+            raise Conflict("No se pudo registrar el cobro.") from e
 
         if not row:
             # Si no había filas, no existía el id
-            raise HTTPException(status_code=404, detail="Reparto día no encontrado.")
+            raise NotFound("Reparto día no encontrado.")
         return row[0]
 
     @staticmethod
