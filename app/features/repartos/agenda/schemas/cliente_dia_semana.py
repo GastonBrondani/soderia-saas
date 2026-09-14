@@ -48,11 +48,6 @@ class FrecuenciaItemIn(BaseModel):
     despues_de_legajo: Optional[int] = None  # requerido si posicion="despues"
 
 
-class ClienteDiaVisitaOut(BaseModel):
-    id_dia: int
-    nombre_dia: str
-    turno_visita: Optional[str] = None
-
 class ClienteAgendaConDatosItem(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     legajo: int

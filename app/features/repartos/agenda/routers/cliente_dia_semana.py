@@ -22,7 +22,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from app.features.clientes.models.direccion_cliente import DireccionCliente
 from app.features.clientes.models.telefono_cliente import TelefonoCliente
 from app.features.clientes.models.cliente_cuenta import ClienteCuenta
-from app.features.repartos.agenda.schemas.cliente_dia_semana import ClienteDiaVisitaOut, ClienteAgendaConDatosItem, AgendaConDatosOut
+from app.features.repartos.agenda.schemas.cliente_dia_semana import ClienteAgendaConDatosItem, AgendaConDatosOut
 
 
 

@@ -281,9 +281,11 @@ con movimientos de archivos.
   `schemas/movimientoStock.py`.~~ **Arreglado en el paso 3 (2026-09-14).**
   `movimiento_stock.py` ahora importa el enum desde `enums_stock.py` en vez
   de redefinirlo.
-- `clienteDiaSemana.py`: importa `ClienteDiaVisitaOut` desde `schemas` y
-  después redefine la misma clase en el archivo. El import queda pisado.
-  **Pendiente.**
+- ~~`clienteDiaSemana.py`: importa `ClienteDiaVisitaOut` desde `schemas` y
+  después redefine la misma clase en el archivo.~~ **Arreglado en el paso 3
+  (2026-09-14).** La del router (con `model_config = ConfigDict(from_attributes=True)`)
+  era la que corría; se sacó el import muerto y se borró la definición
+  duplicada en `schemas/cliente_dia_semana.py` (ya no la usaba nadie más).
 
 **Confirmado por `snapshot_openapi.py` (paso 0, 2026-09-14):** 128 operaciones
 en el contrato. Sin autenticación: `POST /auth/login`, `POST /auth/token`,
