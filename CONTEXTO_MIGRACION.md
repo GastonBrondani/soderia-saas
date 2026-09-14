@@ -313,13 +313,18 @@ en el contrato. Sin autenticación: `POST /auth/login`, `POST /auth/token`,
   (`/archivos/<codigo>/comprobantes/.../AAAA/MM/archivo.pdf`).
 - ~~`persona.py`, `camionReparto.py`, `empleado.py` hacen queries y
   `db.commit()` directo en el router.~~ **Arreglado en el paso 3
-  (2026-09-14).** Cada uno con su `service.py` nuevo. `clienteDiaSemana.py`
-  quedó **parcial**: se movió el único `db.commit()` (el delete de un día de
-  visita) a `agenda/service.py`, pero los endpoints de lectura
-  (`listar_clientes_por_fecha`, `_con_datos`, `_por_rango`, `_por_id_dia`)
-  siguen con el SQL armado en el router — son consultas de reporte con
-  subqueries y window functions, moverlas es un cambio más grande y de más
-  riesgo. **Pendiente si se quiere seguir prolijando ese archivo.**
+  (2026-09-14).** Cada uno con su `service.py` nuevo. ~~`clienteDiaSemana.py`
+  quedó parcial~~: **terminado el mismo día.** Las 4 consultas de reporte
+  (`listar_clientes_por_fecha`, `_con_datos`, `_por_rango`, `_por_id_dia`,
+  con subqueries y window functions) se movieron a `agenda/service.py`; el
+  router quedó fino. Los schemas de respuesta que vivían adentro del router
+  (`ClientePorDiaItem`, `ClientesPorDiaOut`, `ClientesPorDiaSinFechaOut`,
+  `AgendaRangoDiaOut`, `AgendaRangoOut`) se movieron a
+  `schemas/cliente_dia_semana.py`. De paso se borraron `ClienteDiaVisitaIn`
+  y `ClienteDiasVisitaUpsert`, dos clases que ya no usaba nadie desde que
+  se borraron los endpoints comentados en un commit anterior. Probado en
+  vivo con datos reales (cliente con dirección, teléfono y cuenta): las
+  4 consultas devuelven exactamente lo mismo que antes, joins y todo.
 - Los services levantaban `HTTPException` directamente. **Migrado en el
   paso 3 (2026-09-14)** en: `auth`/`personas`/`empleados`/`camiones` (ya no
   aplica, no tenían o se movieron a service nuevo), `repartos/agenda`,

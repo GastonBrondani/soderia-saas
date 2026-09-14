@@ -69,3 +69,41 @@ class AgendaConDatosOut(BaseModel):
     id_dia: int
     nombre_dia: str
     clientes: List[ClienteAgendaConDatosItem]
+
+
+# ================== AGENDA POR DIA / RANGO ==================
+
+class ClientePorDiaItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    legajo: int
+    dni: Optional[int] = None
+    nombre: Optional[str] = None
+    apellido: Optional[str] = None
+    turno_visita: Optional[str] = None
+    estado_visita: Optional[str] = None
+
+
+class ClientesPorDiaOut(BaseModel):
+    fecha: date
+    id_dia: int
+    nombre_dia: str
+    clientes: List[ClientePorDiaItem]
+
+
+class ClientesPorDiaSinFechaOut(BaseModel):
+    id_dia: int
+    nombre_dia: str
+    clientes: List[ClientePorDiaItem]
+
+
+class AgendaRangoDiaOut(BaseModel):
+    fecha: date
+    id_dia: int
+    nombre_dia: str
+    clientes: List[ClientePorDiaItem]
+
+
+class AgendaRangoOut(BaseModel):
+    desde: date
+    hasta: date
+    dias: List[AgendaRangoDiaOut]
