@@ -1,17 +1,17 @@
 # app/api/routers/auth.py
 from __future__ import annotations
-from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from jose import jwt
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.security import (
+    create_access_token,
+    hash_password,
+    necesita_rehash,
     verify_password,
-    SECRET_KEY,
-    JWT_ALGORITHM,
 )
+from app.core.tenancy import tenant_actual
 from app.models.usuario import Usuario
 from app.models.usuarioRol import UsuarioRol
 from app.models.rol import Rol
@@ -19,19 +19,6 @@ from app.schemas.auth import LoginRequest, LoginResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
-
-# En la práctica estos valores deberían venir de tu .env
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 1 día, cambia a gusto
-
-
-def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
-    to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + (
-        expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    )
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=JWT_ALGORITHM)
-    return encoded_jwt
 
 
 @router.post("/login", response_model=LoginResponse)
@@ -56,6 +43,11 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
             detail="Credenciales inválidas.",
         )
 
+    # Hashes viejos (100.000 iteraciones) se migran solos al login.
+    if necesita_rehash(user.contrasena):
+        user.contrasena = hash_password(payload.contrasena)
+        db.commit()
+
     # 3) Roles del usuario
     roles = (
         db.query(Rol.nombre)
@@ -66,12 +58,12 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
     roles_list = [r[0] for r in roles] if roles else []
 
     # 4) Crear token con roles
-    token_data = {
-        "sub": str(user.id_usuario),
-        "nombre_usuario": user.nombre_usuario,
-        "roles": roles_list,
-    }
-    access_token = create_access_token(token_data)
+    access_token = create_access_token(
+        id_usuario=user.id_usuario,
+        nombre_usuario=user.nombre_usuario,
+        roles=roles_list,
+        tenant_codigo=tenant_actual().codigo,
+    )
 
     return LoginResponse(
         access_token=access_token,
@@ -110,6 +102,11 @@ def token(
             detail="Credenciales inválidas.",
         )
 
+    # Hashes viejos (100.000 iteraciones) se migran solos al login.
+    if necesita_rehash(user.contrasena):
+        user.contrasena = hash_password(contrasena)
+        db.commit()
+
     # 3) Roles
     roles = (
         db.query(Rol.nombre)
@@ -120,12 +117,12 @@ def token(
     roles_list = [r[0] for r in roles] if roles else []
 
     # 4) Token con roles
-    token_data = {
-        "sub": str(user.id_usuario),
-        "nombre_usuario": user.nombre_usuario,
-        "roles": roles_list,
-    }
-    access_token = create_access_token(token_data)
+    access_token = create_access_token(
+        id_usuario=user.id_usuario,
+        nombre_usuario=user.nombre_usuario,
+        roles=roles_list,
+        tenant_codigo=tenant_actual().codigo,
+    )
 
     return LoginResponse(
         access_token=access_token,

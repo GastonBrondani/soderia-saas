@@ -3,7 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.security import require_roles, CurrentUser, get_current_user
+from app.core.security import CurrentUser, get_current_user
+from app.core.permissions import require_roles
 from app.schemas.pedido import PedidoCancelarDeudaIn
 from app.schemas.clienteCuenta import ClienteCuentaOut
 from app.services.pedidoService import PedidoService

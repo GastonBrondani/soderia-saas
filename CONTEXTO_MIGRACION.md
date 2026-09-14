@@ -67,33 +67,71 @@ Commit propio: `paso 0: snapshot del contrato de la API`.
 **A partir de acá, este test tiene que estar en verde antes y después de
 cada paso.**
 
-### Paso 1 — Núcleo multi-tenant (PENDIENTE)
+### Paso 1 — Núcleo multi-tenant (HECHO, 2026-09-14)
 
-Copiar desde `../soderia-saas-scaffold/`: todo `app/core/`, todo `app/db/`,
+Copiado desde `../soderia-saas-scaffold/`: todo `app/core/`, todo `app/db/`,
 `app/main.py`, `alembic/env.py`, `scripts/`, `tests/`, `.env.example`,
-`requirements.txt`, `Makefile` y `README.md`. Varios de esos **reemplazan**
-archivos existentes (`database.py`, `security.py`, `scheduler.py`,
-`main.py`, `alembic/env.py`): es lo esperado.
+`requirements.txt`, `Makefile`. `README.md` ya estaba (identico al del
+scaffold). Varios de esos **reemplazaron** archivos existentes (`database.py`,
+`security.py`, `scheduler.py`, `main.py`, `alembic/env.py`): es lo esperado.
 
-Borrar `app/core/settings.py`: su contenido ahora vive en `core/config.py`.
+**`app/core/settings.py` NO se borró.** El scaffold no tiene reemplazo para
+`COMPROBANTES_BASE_PATH`/`COMPROBANTES_BASE_URL`, que siguen usando
+`comprobantePedidoService.py` y `comprobantePagoService.py` (el equivalente
+nuevo es `core/storage.py`, una abstracción distinta con carpeta por tenant).
+Migrar esos dos services es tocar lógica real, así que queda para el paso 3.
+Mientras tanto, `settings.py` llama su propio `load_dotenv()` porque el
+`database.py` nuevo ya no lo hace por él.
 
-Ajustes a mano, son los únicos:
+Ajustes a mano, terminaron siendo más de los 3 que preveía este archivo:
 
-1. `app/routers/auth.py`: sacar la función local `create_access_token`
-   (ahora está en `core/security.py`), importarla de ahí y pasarle
-   `tenant_codigo=tenant_actual().codigo` en las dos llamadas.
-2. Los imports de `require_roles` y `require_admin` pasan de
-   `app.core.security` a `app.core.permissions`.
-3. Los `id_empresa` por query param **se dejan como están**. Se limpian en
+1. `app/routers/auth.py`: se sacó la función local `create_access_token`
+   (ahora está en `core/security.py`), se importa de ahí y se le pasa
+   `tenant_codigo=tenant_actual().codigo` en las dos llamadas. También se
+   agregó el rehash automático de contraseñas viejas (`necesita_rehash`).
+2. Los imports de `require_roles` y `require_admin` (en `pago.py` y
+   `clienteCuenta.py`) pasaron de `app.core.security` a `app.core.permissions`.
+3. **Nuevo, no estaba anotado:** `core/security.py`, en `get_current_user`,
+   traía `from app.features.usuarios.models import Usuario` — ruta que recién
+   existe después del paso 2. Se apuntó a `app.models.usuario` (ubicación
+   actual) con un comentario `TODO migracion paso 2`; el script de ese paso
+   debería reescribirlo solo al mover el modelo.
+4. **Nuevo, no estaba anotado:** el `scheduler.py` nuevo asumía que
+   `crear_repartos_del_dia_automaticos` y `ensure_usuario_sis` ya vivían en
+   `app/features/repartos/repartos_dia/service.py`. Esa lógica vivía inline
+   en el `core/scheduler.py` viejo (nunca se había extraído a un service).
+   Se movió tal cual a `app/services/repartosSchedulerService.py` (sin
+   cambiar una línea de lógica) y se actualizó el import del scheduler.
+5. **Bug nuevo encontrado y arreglado, no de la migración:** en
+   `core/scheduler.py`, `_sincronizar_jobs()` borraba el job
+   `repartos:arranque` (el catch-up de repartos faltantes al iniciar, una
+   sola vez a los 10s) porque corre primero, a los 5s, y su filtro trata
+   cualquier `repartos:*` que no sea una zona horaria conocida como job
+   huérfano. Se agregó una excepción explícita para ese id. Verificado: sin
+   el fix, el catch-up nunca llegaba a dispararse; con el fix, corre (y en el
+   tenant demo falla porque no tiene usuario `sis`, esperado).
+6. Los `id_empresa` por query param **se dejan como están**. Se limpian en
    el paso 3.
 
-Configurar `.env` a partir de `.env.example`, con `SECRET_KEY` generada.
-Crear la base `soderia_control`, inicializar el control plane y dar de alta
-un tenant `demo` con `scripts/crear_tenant.py`.
+`.env` armado a partir de `.env.example` (agregado un bloque para los dos
+`COMPROBANTES_PEDIDOS_*` legacy), con `SECRET_KEY` generada. El Postgres de
+`.env.local` (puerto 5433, contenedor `soderia_db` de otro trabajo) no
+aceptó esas credenciales, así que se levantó un Postgres nuevo y limpio
+(`docker run postgres:17`, puerto 5434, `postgres`/`postgres`) solo para este
+entorno. Control plane inicializado, tenant `demo` dado de alta con
+`scripts/crear_tenant.py` (contraseña de `admin` no guardada en ningún
+archivo, se mostró una sola vez).
 
-Verificación: `/health/ready` responde `ready`; un request sin tenant da
-400; con `X-Tenant: demo` y sin token da 401; el login devuelve un token con
-el claim `ten`.
+`tests/test_api_contract.py::test_sin_rutas_duplicadas` es un test nuevo que
+falla por los 3 duplicados de la Deuda técnica de abajo. Se marcó
+`xfail(strict=True)` referenciando esta sección, en vez de arreglar los
+duplicados fuera del paso 3.
+
+Verificación hecha: `/health` (200, visible en el schema — se le sacó un
+`include_in_schema=False` que el `main.py` nuevo le agregaba de más y que
+tumbaba `test_no_desaparecieron_operaciones`), `/health/ready` (`ready`),
+`X-Tenant: demo` sin token (401), login devuelve token con el claim `ten`.
+`pytest tests/` en verde (6 passed, 2 skipped esperando el paso 2, 1 xfailed).
 
 Commit propio: `paso 1: nucleo multi-tenant`.
 
@@ -207,6 +245,13 @@ en el contrato. Sin autenticación: `POST /auth/login`, `POST /auth/token`,
 
 **Inconsistencias de capas:**
 
+- `app/core/settings.py` sigue vivo (no se borró en el paso 1, ver esa
+  sección). `comprobantePedidoService.py` y `comprobantePagoService.py`
+  siguen escribiendo archivos a mano con `COMPROBANTES_BASE_PATH`/`_URL` en
+  vez de usar `core/storage.py`. Migrarlos a `get_storage()` y borrar
+  `settings.py`. Esto además toca las URLs guardadas en `documentos`
+  (`/docs/comprobantes/...` → `/archivos/<codigo>/...`), coordinar con
+  Flutter si hay que migrar datos del cliente actual.
 - `persona.py`, `camionReparto.py`, `empleado.py` y `clienteDiaSemana.py`
   hacen queries y `db.commit()` directo en el router. Otros usan Service.
 - Los services levantan `HTTPException` directamente. Van migrando a los

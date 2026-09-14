@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 from fastapi import APIRouter, Depends, HTTPException
-from app.core.security import get_current_user, require_admin, CurrentUser
+from app.core.security import get_current_user, CurrentUser
+from app.core.permissions import require_admin
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
