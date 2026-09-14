@@ -3,12 +3,12 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
 
-from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from contextlib import nullcontext
 
+from app.core.exceptions import AppError, Conflict, NotFound
 from app.features.pagos.services.idempotency import buscar_por_idempotency_key
 
 from app.features.pagos.models.pago import Pago
@@ -45,7 +45,7 @@ def _bucket_medio_pago(nombre: str) -> str:
         "mercadopago",
     }:
         return "virtual"
-    raise HTTPException(status_code=400, detail=f"medio_pago no soportado: {nombre!r}")
+    raise AppError(f"medio_pago no soportado: {nombre!r}")
 
 
 def _aplicar_pago_a_cuenta(cuenta: ClienteCuenta, monto: Decimal) -> None:
@@ -97,7 +97,7 @@ class PagoService:
     ) -> Pago:
         monto = _q2(monto)
         if monto <= 0:
-            raise HTTPException(status_code=400, detail="monto debe ser > 0")
+            raise AppError("monto debe ser > 0")
 
         # Idempotencia (offline sync): si ya llegó este pago, devolver el original
         existente = buscar_por_idempotency_key(db, Pago, idempotency_key)
@@ -113,15 +113,11 @@ class PagoService:
                     select(MedioPago).where(MedioPago.id_medio_pago == id_medio_pago)
                 ).scalar_one_or_none()
                 if mp is None:
-                    raise HTTPException(
-                        status_code=400, detail="id_medio_pago inexistente."
-                    )
+                    raise AppError("id_medio_pago inexistente.")
                 bucket = _bucket_medio_pago(mp.nombre)
 
                 if legajo is None and tipo_pago in {"COBRO_PEDIDO", "PAGO_DEUDA"}:
-                    raise HTTPException(
-                        status_code=400, detail="Falta legajo para pago de cliente."
-                    )
+                    raise AppError("Falta legajo para pago de cliente.")
 
                 # --- cuenta (si aplica) ---
                 cuenta = None
@@ -137,14 +133,10 @@ class PagoService:
                             .all()
                         )
                         if not ids:
-                            raise HTTPException(
-                                status_code=409,
-                                detail="El cliente no tiene cuenta creada.",
-                            )
+                            raise Conflict("El cliente no tiene cuenta creada.")
                         if len(ids) > 1:
-                            raise HTTPException(
-                                status_code=400,
-                                detail="El cliente tiene más de una cuenta. Enviar id_cuenta.",
+                            raise AppError(
+                                "El cliente tiene más de una cuenta. Enviar id_cuenta.",
                             )
                         id_cuenta = ids[0]
 
@@ -157,10 +149,7 @@ class PagoService:
                         .with_for_update()
                     ).scalar_one_or_none()
                     if cuenta is None:
-                        raise HTTPException(
-                            status_code=404,
-                            detail="Cuenta no encontrada para ese cliente.",
-                        )
+                        raise NotFound("Cuenta no encontrada para ese cliente.")
 
                 # --- reparto (si aplica) ---
                 rep = None
@@ -171,9 +160,7 @@ class PagoService:
                         .with_for_update()
                     ).scalar_one_or_none()
                     if rep is None:
-                        raise HTTPException(
-                            status_code=404, detail="Reparto del día no encontrado"
-                        )
+                        raise NotFound("Reparto del día no encontrado")
 
                 # --- crear pago ---
                 pago = Pago(
@@ -232,7 +219,7 @@ class PagoService:
 
                 return pago
 
-        except IntegrityError as e:
+        except IntegrityError:
             # Carrera entre dos reintentos del mismo pago: el índice único de
             # idempotency_key rechazó el segundo. Devolvemos el que sí se creó.
             if started_tx:
@@ -240,15 +227,11 @@ class PagoService:
             existente = buscar_por_idempotency_key(db, Pago, idempotency_key)
             if existente is not None:
                 return existente
-            raise HTTPException(
-                status_code=500, detail=f"Error interno creando pago: {e}"
-            )
-        except SQLAlchemyError as e:
+            raise
+        except SQLAlchemyError:
             if started_tx:
                 db.rollback()
-            raise HTTPException(
-                status_code=500, detail=f"Error interno creando pago: {e}"
-            )
+            raise
 
     @staticmethod
     def crear_pago_libre(
@@ -310,12 +293,11 @@ class PagoService:
         pago = db.execute(stmt).scalar_one_or_none()
 
         if not pago:
-            raise HTTPException(status_code=404, detail="Pago no encontrado.")
+            raise NotFound("Pago no encontrado.")
 
         if pago.id_repartodia is not None:
-            raise HTTPException(
-                status_code=409,
-                detail=f"El pago {id_pago} ya está asignado al reparto {pago.id_repartodia}.",
+            raise Conflict(
+                f"El pago {id_pago} ya está asignado al reparto {pago.id_repartodia}.",
             )
 
         # Necesitamos el medio de pago para saber el bucket (efectivo vs virtual)
@@ -332,7 +314,7 @@ class PagoService:
         ).scalar_one_or_none()
 
         if not rep:
-            raise HTTPException(status_code=404, detail="RepartoDia no encontrado.")
+            raise NotFound("RepartoDia no encontrado.")
 
         # 3) Asignar y actualizar
         pago.id_repartodia = id_repartodia
