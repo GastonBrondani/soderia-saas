@@ -74,6 +74,8 @@ ASIGNACION: dict[str, str] = {
     "telefonoCliente": "clientes",
     "clienteCuenta": "clientes",
     "productoCliente": "clientes",
+    "clienteDetalle": "clientes",
+    "enums_cliente": "clientes",
     # --- Catalogo ---
     "catalogo": "catalogo",
     "producto": "catalogo/productos",
@@ -92,7 +94,9 @@ ASIGNACION: dict[str, str] = {
     "precioItem": "catalogo/listas_precios",
     # --- Inventario ---
     "stock": "inventario/stock",
+    "stockDetalle": "inventario/stock",
     "movimientoStock": "inventario/movimientos",
+    "enumsStock": "inventario/movimientos",
     "movimientoEnvaseCliente": "inventario/envases",
     "envaseCliente": "inventario/envases",
     # --- Operaciones ---
@@ -117,6 +121,8 @@ ASIGNACION: dict[str, str] = {
     "historico": "auditoria",
     "enumsHistorico": "auditoria",
     "reportes": "reportes",
+    # --- Nuevo en el paso 1: logica del scheduler extraida de core/ ---
+    "repartosScheduler": "repartos/repartos_dia",
 }
 
 # Archivos que NO se mueven.
