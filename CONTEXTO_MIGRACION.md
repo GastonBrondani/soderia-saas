@@ -303,11 +303,35 @@ en el contrato. Sin autenticación: `POST /auth/login`, `POST /auth/token`,
   `settings.py`. Esto además toca las URLs guardadas en `documentos`
   (`/docs/comprobantes/...` → `/archivos/<codigo>/...`), coordinar con
   Flutter si hay que migrar datos del cliente actual.
-- `persona.py`, `camionReparto.py`, `empleado.py` y `clienteDiaSemana.py`
-  hacen queries y `db.commit()` directo en el router. Otros usan Service.
-- Los services levantan `HTTPException` directamente. Van migrando a los
-  errores de dominio de `core/exceptions.py`, así se pueden usar desde un
-  script o un job sin arrastrar FastAPI.
+- ~~`persona.py`, `camionReparto.py`, `empleado.py` hacen queries y
+  `db.commit()` directo en el router.~~ **Arreglado en el paso 3
+  (2026-09-14).** Cada uno con su `service.py` nuevo. `clienteDiaSemana.py`
+  quedó **parcial**: se movió el único `db.commit()` (el delete de un día de
+  visita) a `agenda/service.py`, pero los endpoints de lectura
+  (`listar_clientes_por_fecha`, `_con_datos`, `_por_rango`, `_por_id_dia`)
+  siguen con el SQL armado en el router — son consultas de reporte con
+  subqueries y window functions, moverlas es un cambio más grande y de más
+  riesgo. **Pendiente si se quiere seguir prolijando ese archivo.**
+- Los services levantaban `HTTPException` directamente. **Migrado en el
+  paso 3 (2026-09-14)** en: `auth`/`personas`/`empleados`/`camiones` (ya no
+  aplica, no tenían o se movieron a service nuevo), `repartos/agenda`,
+  `catalogo/combos`, `catalogo/listas_precios` (5 archivos),
+  `catalogo/servicios`, `clientes/service.py`, `inventario/envases`,
+  `inventario/stock`, `pagos/services/pago.py`, `repartos/repartos_dia`
+  (2 archivos). **Pendiente:**
+  - `pedidos/service.py`: ~44 usos de `HTTPException` en 793 líneas, mucho
+    más grande que el resto — se dejó aparte a propósito, para encararlo
+    con más tiempo.
+  - **16 routers** (no services) que también levantan `HTTPException`
+    directo, 56 usos en total. El más grande es
+    `clientes/routers/cliente.py` (19 usos, 560 líneas, con lógica de
+    negocio mezclada — necesitaría el mismo tratamiento que
+    persona/camión/empleado, no solo el cambio de excepción). Los otros:
+    `auditoria`, `auth`, `documentos`, `pagos` (router), `pedidos` (router),
+    `usuarios`, `clientes/routers/{cliente_cuenta,direccion_cliente,
+    email_cliente,telefono_cliente}`, `maestros/routers/medio_pago`,
+    `catalogo/productos`, `inventario/stock` (router),
+    `repartos/recorridos`, `repartos/visitas`.
 - ~~Hay bloques grandes de código comentado en `repartoDia.py`,
   `clienteDiaSemana.py`, `listaPrecios.py` y `pago.py`.~~ **Borrados en el
   paso 3 (2026-09-14).** Junto con imports que solo usaban esos bloques
