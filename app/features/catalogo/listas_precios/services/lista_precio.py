@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from fastapi import HTTPException
+from app.core.exceptions import NotFound
 from app.features.catalogo.listas_precios.models.lista_de_precios import ListaDePrecios
 from sqlalchemy import select
 
@@ -13,7 +13,7 @@ from app.features.catalogo.listas_precios.schemas.lista_de_precios import (
 def _get_lista_or_404(db: Session, id_lista: int) -> ListaDePrecios:
     lista = db.get(ListaDePrecios, id_lista)
     if not lista:
-        raise HTTPException(status_code=404, detail="Lista de precios no encontrada")
+        raise NotFound("Lista de precios no encontrada")
     return lista
 
 # --- CRUD de ListaDePrecios ---
@@ -42,40 +42,3 @@ def actualizar_lista(db: Session, id_lista: int, payload: ListaDePreciosUpdate) 
     db.commit()
     db.refresh(obj)
     return obj
-
-#Utilizado para eliminar ahora y despues mas adelante capaz se habilite 
-#from app.features.catalogo.listas_precios.models.lista_precio_producto import ListaPrecioProducto
-
-#def eliminar_lista(db: Session, id_lista: int, cascade: bool = True) -> None:
-    # 1) Verifico existencia
-#    obj = _get_lista_or_404(db, id_lista)
-
-#    if cascade:
-        # 2) Borro primero los precios de esa lista (hijos)
-#        db.execute(
-#            delete(ListaPrecioProducto).where(
-#                ListaPrecioProducto.id_lista == id_lista
-#            )
-#        )
-        # 3) Borro la lista
-#        db.execute(
-#            delete(ListaDePrecios).where(
-#                ListaDePrecios.id_lista == id_lista
-#            )
-#        )
-#        db.commit()
-#        return
-
-    # Si no hago cascade, intento borrar directo y capturo FK violation
-#    try:
-#        db.execute(
-#            delete(ListaDePrecios).where(ListaDePrecios.id_lista == id_lista)
-#        )
-#        db.commit()
-#    except IntegrityError:
-#        db.rollback()
-#        raise HTTPException(
-#            status_code=409,
-#            detail="No se puede borrar la lista porque tiene precios asociados. "
-#                  "Usá ?cascade=true o borrá los precios primero."
-#        )

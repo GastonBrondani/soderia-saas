@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import List
 
-from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.exceptions import AppError, NotFound
 from app.features.catalogo.listas_precios.models.lista_precio_combo import ListaPrecioCombo
 from app.features.catalogo.combos.models.combo import Combo
 
@@ -63,14 +63,14 @@ def upsert_precio_combo(db: Session, id_lista: int, payload: LPCUpsert) -> LPCOu
     Inserta o actualiza el precio de un combo dentro de una lista.
     """
     if payload.id_combo is None:
-        raise HTTPException(status_code=400, detail="Falta id_combo")
+        raise AppError("Falta id_combo")
     if payload.id_lista is None:
         payload.id_lista = id_lista
 
     # Validar combo existe (si querés validar también que sea de la misma empresa, se puede)
     combo = db.get(Combo, payload.id_combo)
     if not combo:
-        raise HTTPException(status_code=404, detail="Combo no encontrado")
+        raise NotFound("Combo no encontrado")
 
     # Buscar si existe la fila (PK compuesta id_lista + id_combo)
     obj = db.get(ListaPrecioCombo, {"id_lista": id_lista, "id_combo": payload.id_combo})

@@ -4,8 +4,8 @@ from typing import List
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from fastapi import HTTPException
 
+from app.core.exceptions import AppError, NotFound
 from app.features.catalogo.listas_precios.schemas.precio_item import PrecioItemOut, TipoItemPrecio
 
 from app.features.catalogo.productos.models.producto import Producto
@@ -29,7 +29,7 @@ def upsert_precio_item(
     if tipo == "producto":
         prod = db.get(Producto, id_item)
         if not prod:
-            raise HTTPException(status_code=404, detail="Producto no encontrado")
+            raise NotFound("Producto no encontrado")
 
         obj = db.get(
             ListaPrecioProducto, {"id_lista": id_lista, "id_producto": id_item}
@@ -55,7 +55,7 @@ def upsert_precio_item(
     if tipo == "combo":
         combo = db.get(Combo, id_item)
         if not combo:
-            raise HTTPException(status_code=404, detail="Combo no encontrado")
+            raise NotFound("Combo no encontrado")
 
         obj = db.get(ListaPrecioCombo, {"id_lista": id_lista, "id_combo": id_item})
         if obj:
@@ -74,7 +74,7 @@ def upsert_precio_item(
             nombre=combo.nombre,
         )
 
-    raise HTTPException(status_code=400, detail="tipo inválido (producto|combo)")
+    raise AppError("tipo inválido (producto|combo)")
 
 
 def listar_items_con_precio(db: Session, *, id_lista: int) -> List[PrecioItemOut]:

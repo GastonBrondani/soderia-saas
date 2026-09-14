@@ -1,8 +1,8 @@
 from typing import List
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from fastapi import HTTPException
 
+from app.core.exceptions import AppError, NotFound
 from app.features.catalogo.listas_precios.models.lista_de_precios import ListaDePrecios
 from app.features.catalogo.listas_precios.models.lista_precio_servicio import ListaPrecioServicio
 from app.features.catalogo.servicios.models.cliente_servicio import ClienteServicio
@@ -13,15 +13,15 @@ def upsert_precio_servicio(db: Session, id_lista: int, payload: LPSUpsert) -> LP
     # 1. Verificar Lista
     lista = db.get(ListaDePrecios, id_lista)
     if not lista:
-        raise HTTPException(status_code=404, detail="Lista de precios no encontrada")
+        raise NotFound("Lista de precios no encontrada")
 
     # 2. Verificar Servicio (ClienteServicio)
     if payload.id_cliente_servicio is None:
-        raise HTTPException(status_code=400, detail="Falta id_cliente_servicio")
+        raise AppError("Falta id_cliente_servicio")
 
     servicio = db.get(ClienteServicio, payload.id_cliente_servicio)
     if not servicio:
-        raise HTTPException(status_code=404, detail="Servicio (contrato) no encontrado")
+        raise NotFound("Servicio (contrato) no encontrado")
 
     # 3. Upsert
     item = db.get(ListaPrecioServicio, (id_lista, payload.id_cliente_servicio))

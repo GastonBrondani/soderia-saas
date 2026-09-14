@@ -2,8 +2,8 @@ from typing import List
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
-from fastapi import HTTPException
 
+from app.core.exceptions import AppError, NotFound
 from app.features.catalogo.listas_precios.models.lista_de_precios import ListaDePrecios
 from app.features.catalogo.listas_precios.models.lista_precio_producto import ListaPrecioProducto
 from app.features.catalogo.productos.models.producto import Producto
@@ -14,7 +14,7 @@ from app.features.catalogo.productos.schemas import ProductoConPrecioOut
 def _get_lista_or_404(db: Session, id_lista: int) -> ListaDePrecios:
     lista = db.get(ListaDePrecios, id_lista)
     if not lista:
-        raise HTTPException(status_code=404, detail="Lista de precios no encontrada")
+        raise NotFound("Lista de precios no encontrada")
     return lista
 
 
@@ -48,7 +48,7 @@ def upsert_precio(db: Session, id_lista: int, payload: LPPUpsert) -> LPPOut:
     _get_lista_or_404(db, id_lista)
 
     if payload.id_lista != id_lista:
-        raise HTTPException(status_code=400, detail="Path y body no coinciden (id_lista).")
+        raise AppError("Path y body no coinciden (id_lista).")
 
     stmt = insert(ListaPrecioProducto).values(
         id_lista=id_lista, id_producto=payload.id_producto, precio=payload.precio
@@ -77,7 +77,7 @@ def upsert_precios_bulk(db: Session, id_lista: int, items: List[LPPUpsert]) -> L
         return []
 
     if any(it.id_lista != id_lista for it in items):
-        raise HTTPException(status_code=400, detail="Todos los items deben usar el mismo id_lista del path.")
+        raise AppError("Todos los items deben usar el mismo id_lista del path.")
 
     values = [{"id_lista": it.id_lista, "id_producto": it.id_producto, "precio": it.precio} for it in items]
 
