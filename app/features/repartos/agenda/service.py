@@ -1,9 +1,9 @@
 # app/services/agenda_service.py
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
-from fastapi import HTTPException
 
+from app.core.exceptions import AppError, NotFound
 from app.features.repartos.agenda.models.cliente_dia_semana import ClienteDiaSemana
 
 
@@ -49,7 +49,7 @@ def insertar_cliente_en_agenda(
     despues_de_legajo: int | None,
 ):
     if not turno:
-        raise HTTPException(400, "Falta turno")
+        raise AppError("Falta turno")
 
     registro = db.execute(
         select(ClienteDiaSemana)
@@ -90,7 +90,7 @@ def insertar_cliente_en_agenda(
         idx = len(filas)
     elif posicion == "despues":
         if not despues_de_legajo:
-            raise HTTPException(400, "Falta despues_de_legajo")
+            raise AppError("Falta despues_de_legajo")
 
         idx = None
         for i, f in enumerate(filas):
@@ -99,9 +99,19 @@ def insertar_cliente_en_agenda(
                 break
 
         if idx is None:
-            raise HTTPException(404, "Cliente referencia no encontrado")
+            raise NotFound("Cliente referencia no encontrado")
     else:
-        raise HTTPException(400, "Posición inválida")
+        raise AppError("Posición inválida")
 
     filas.insert(idx, registro)
     _reasignar_ordenes_sin_choque(db, filas)
+
+
+def eliminar_dia_visita_cliente(db: Session, legajo: int, id_dia: int) -> None:
+    db.execute(
+        delete(ClienteDiaSemana).where(
+            ClienteDiaSemana.id_cliente == legajo,
+            ClienteDiaSemana.id_dia == id_dia,
+        )
+    )
+    db.commit()

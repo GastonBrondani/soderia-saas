@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from app.core.security import get_current_user
 from datetime import date, datetime, timedelta, time
 from sqlalchemy.orm import Session
-from sqlalchemy import select, delete
+from sqlalchemy import select
 from typing import List, Optional
 from pydantic import BaseModel, ConfigDict
 
+from app.core.exceptions import AppError, NotFound
+from app.features.repartos.agenda import service as agenda_service
 from app.features.clientes.dependencies import get_cliente_or_404_dep
 from app.core.database import get_db
 from app.features.repartos.agenda.models.cliente_dia_semana import ClienteDiaSemana
@@ -296,9 +298,9 @@ def listar_clientes_por_rango(
     db: Session = Depends(get_db),
 ):
     if hasta < desde:
-        raise HTTPException(400, "'hasta' no puede ser anterior a 'desde'.")
+        raise AppError("'hasta' no puede ser anterior a 'desde'.")
     if (hasta - desde).days > 92:
-        raise HTTPException(400, "El rango no puede superar los 92 días.")
+        raise AppError("El rango no puede superar los 92 días.")
 
     # --- Query 1: agenda base (frecuencia de cada cliente por día de semana) ---
     stmt = (
@@ -388,23 +390,6 @@ def listar_clientes_por_rango(
 
     return AgendaRangoOut(desde=desde, hasta=hasta, dias=dias_out)
 
-# ---- Helper de validación ----
-def _validar_dias_existen(db: Session, ids: List[int]) -> None:
-    if not ids:
-        return  # permitir limpiar días (lista vacía)
-    existentes = {
-        row.id_dia
-        for row in db.execute(
-            select(DiaSemana.id_dia).where(DiaSemana.id_dia.in_(ids))
-        ).all()
-    }
-    faltantes = set(ids) - existentes
-    if faltantes:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Días inexistentes: {sorted(faltantes)}"
-        )
-    
 #Trae los dias de visita del cliente por los id del dia (Funciona)
 @router.get("/agenda/visitas/dia/{id_dia}", response_model=ClientesPorDiaSinFechaOut)
 def listar_clientes_por_id_dia(
@@ -415,7 +400,7 @@ def listar_clientes_por_id_dia(
 ):
     # Validación de rango
     if not (1 <= id_dia <= 7):
-        raise HTTPException(status_code=400, detail="id_dia debe estar entre 1 y 7 (Lunes=1, Domingo=7)")
+        raise AppError("id_dia debe estar entre 1 y 7 (Lunes=1, Domingo=7)")
 
     # Consulta base (misma forma que tu endpoint por fecha)
     stmt = (
@@ -452,7 +437,7 @@ def listar_clientes_por_id_dia(
     ).scalar_one_or_none()
 
     if not nombre_dia:
-        raise HTTPException(status_code=404, detail="Día inexistente.")
+        raise NotFound("Día inexistente.")
 
     return ClientesPorDiaSinFechaOut(
         id_dia=id_dia,
@@ -505,24 +490,5 @@ def eliminar_dia_visita_cliente(
     cliente: Cliente = Depends(get_cliente_or_404_dep),
     db: Session = Depends(get_db),
 ):
-    db.execute(
-        delete(ClienteDiaSemana).where(
-            ClienteDiaSemana.id_cliente == cliente.legajo,
-            ClienteDiaSemana.id_dia == id_dia,
-        )
-    )
-    db.commit()
-
-def _validar_dias_existen(db: Session, ids: list[int]) -> None:
-    if not ids:
-        return
-    rows = db.execute(
-        select(DiaSemana.id_dia).where(DiaSemana.id_dia.in_(ids))
-    ).scalars().all()
-    faltantes = set(ids) - set(rows)
-    if faltantes:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Días inexistentes: {sorted(faltantes)}",
-        )
+    agenda_service.eliminar_dia_visita_cliente(db, cliente.legajo, id_dia)
 
