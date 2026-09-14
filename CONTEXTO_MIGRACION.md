@@ -236,6 +236,13 @@ con movimientos de archivos.
   código muerto que parece vivo.
 - `stock.py`: `listar_detalle` (`GET /stock/detalle`) también está definida
   dos veces. Mismo bug que en `listaPrecios.py`, no estaba anotado acá.
+- `TipoMovimiento` está definido **dos veces**: en `schemas/enumsStock.py` y
+  en `schemas/movimientoStock.py`, con los mismos valores
+  (ingreso/egreso/ajuste). Distintos archivos importan de uno u otro sin
+  criterio (`producto.py` y `envaseClienteService.py` de `enumsStock`;
+  `stockService.py` de `movimientoStock`). Funciona por casualidad porque
+  ambas son `str, Enum`: comparan igual por valor aunque son clases
+  distintas. Unificar en una sola definición.
 - `clienteDiaSemana.py`: importa `ClienteDiaVisitaOut` desde `schemas` y
   después redefine la misma clase en el archivo. El import queda pisado.
 
