@@ -317,10 +317,23 @@ en el contrato. Sin autenticación: `POST /auth/login`, `POST /auth/token`,
   así que cualquier comprobante generado entre el paso 1 y ahora quedaba
   con una `url_archivo` que apuntaba a una ruta que ya no existía —
   comprobantes nuevos, rotos en silencio. Este cambio lo arregla.
-  Sigue pendiente, y sí necesita Flutter: si hay que migrar datos del
+  ~~Sigue pendiente, y sí necesita Flutter: si hay que migrar datos del
   cliente actual, las URLs viejas en `documentos` (formato
   `/docs/comprobantes/...`) hay que reescribirlas al formato nuevo
-  (`/archivos/<codigo>/comprobantes/.../AAAA/MM/archivo.pdf`).
+  (`/archivos/<codigo>/comprobantes/.../AAAA/MM/archivo.pdf`).~~
+  **Script listo (2026-09-15):** `scripts/migrar_urls_comprobantes.py`.
+  Copia los archivos de la carpeta plana vieja (`<origen>/comprobantes/
+  pagos|pedidos/<archivo>`) a `<tenant>/comprobantes/<categoria>/AAAA/MM/
+  <archivo>` (año/mes de `documentos.fecha_carga`) y reescribe
+  `url_archivo`. Tiene `--dry-run`, es idempotente (una fila ya migrada no
+  vuelve a tocarse) y no borra los originales. Probado con un documento y
+  cliente de prueba contra el tenant `demo` (insertados y borrados en la
+  misma verificación). **No requiere nada de Flutter**: el campo `url` que
+  ve el cliente sigue siendo una ruta relativa al endpoint `/archivos/...`,
+  como ya viene desde el paso 1 — esto es puramente una migración de datos
+  del lado del servidor. Falta correrlo de verdad el día que se decida
+  importar los datos del cliente actual (con `--origen` apuntando a la
+  carpeta real del sistema viejo).
 - ~~`persona.py`, `camionReparto.py`, `empleado.py` hacen queries y
   `db.commit()` directo en el router.~~ **Arreglado en el paso 3
   (2026-09-14).** Cada uno con su `service.py` nuevo. ~~`clienteDiaSemana.py`
