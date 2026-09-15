@@ -621,6 +621,16 @@ en el contrato. Sin autenticación: `POST /auth/login`, `POST /auth/token`,
   costo del modelo elegido.
 - **Sincronización offline:** cualquier cambio en `features/sincronizacion/`
   o en la idempotencia de pagos rompe tablets en la calle. Máximo cuidado.
+- **CI (2026-09-15, segunda revisión cruzada):** el repo no tenía ningún
+  workflow. Se agregó `.github/workflows/tests.yml`: corre `pytest tests/`
+  completo (contrato + los 4 de `test_multi_tenant.py`) en cada push/PR a
+  `main`, con un `postgres:17` como service. Sin variables de entorno
+  propias a propósito — `tests/conftest.py` ya trae defaults pensados para
+  un Postgres en `localhost:5432` con `postgres`/`postgres`, que es
+  justo lo que ese service expone. Los tests de integración eran los que
+  encontraron los 3 bugs de pérdida silenciosa de datos: si corrían solo
+  en la máquina de quien los escribió, el hallazgo no se protegía a
+  futuro.
 - **Convención de transacciones (2026-09-15, segunda revisión cruzada):
   los routers commitean, los services nunca.** Ningún service hace
   `db.begin()`/`with db.begin():` ni decide si commitear mirando

@@ -1,0 +1,50 @@
+name: tests
+
+# Corre la suite completa (contrato de API + integracion multi-tenant) en
+# cada push y PR contra main. Sin esto, los tests de integracion
+# (tests/test_multi_tenant.py) solo corren en la maquina de quien los
+# escribio: son justo los que encontraron los 3 bugs de perdida silenciosa
+# de datos del 2026-09-15, porque son los unicos que pegan HTTP autenticado
+# de punta a punta contra un Postgres real. Que corran solo localmente es
+# como no tenerlos.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - run: pip install -r requirements.txt
+
+      # Sin variables de entorno propias a proposito: tests/conftest.py ya
+      # trae defaults (CONTROL_PLANE_DATABASE_URL, TENANT_DB_*, SECRET_KEY)
+      # pensados para un Postgres nativo en localhost:5432 con
+      # postgres/postgres -- exactamente lo que el servicio de arriba
+      # levanta. Si esos defaults cambian, este workflow no necesita tocarse.
+      - name: pytest (contrato + integracion multi-tenant)
+        run: pytest tests/ -v
