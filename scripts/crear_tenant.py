@@ -14,14 +14,19 @@ Hoy serian varias horas de trabajo manual. Con esto es un comando.
 Pasos que ejecuta, en orden:
     1. Valida el codigo (va en un subdominio y en un nombre de base).
     2. CREATE DATABASE soderia_solmar
-    3. alembic upgrade head sobre esa base
-    4. Siembra las tablas maestras (dias de la semana, medios de pago, roles)
+    3. alembic upgrade head sobre esa base (las tablas maestras --dias de
+       la semana, medios de pago, roles, etc.-- vienen de la migracion de
+       seed, no de este script)
+    4. Crea la fila de `empresa` con la razon social pasada por parametro
     5. Crea el usuario administrador y muestra su contraseña una sola vez
     6. Prepara las carpetas de archivos
-    7. Marca el tenant como ACTIVO en el control plane
+    7. Verifica que el alta haya quedado completa (empresa, rol ADMIN,
+       usuario admin con ese rol)
+    8. Marca el tenant como ACTIVO en el control plane
 
-Si algo falla en el medio, el tenant queda en estado PROVISIONANDO y no
-atiende requests. Con --rollback se limpia todo y se vuelve a empezar.
+Si algo falla en el medio -- incluida la verificacion del paso 7 -- el
+tenant queda en estado PROVISIONANDO y no atiende requests. Con --rollback
+se limpia todo y se vuelve a empezar.
 """
 
 from __future__ import annotations
@@ -132,20 +137,67 @@ def migrar(dsn: str) -> None:
     print("  migraciones aplicadas")
 
 
-def sembrar_maestros(dsn: str) -> None:
-    """Datos sin los que la app no arranca: dias, medios de pago, roles."""
-    try:
-        from scripts.seed_maestros import sembrar
-    except ImportError:
-        print("  (seed_maestros.py todavia no existe, se omite)")
-        return
+def crear_empresa(dsn: str, razon_social: str) -> int:
+    """La empresa de la sodería. Con una base por tenant hay una sola fila.
 
+    Las tablas maestras de verdad (dias de la semana, medios de pago,
+    roles, tipos de movimiento/evento) ya vienen sembradas por la
+    migracion de Alembic `409913c99187_seed_datos_base` -- son constantes
+    del esquema, iguales para cualquier sodería. La empresa no: la razon
+    social es dato del cliente, por eso se crea aca y no en una migracion.
+    """
     engine = create_engine(dsn)
     try:
-        sembrar(engine)
-        print("  tablas maestras sembradas")
+        with engine.begin() as conn:
+            id_empresa = conn.execute(
+                text(
+                    "INSERT INTO empresa (razon_social) VALUES (:r) "
+                    "RETURNING id_empresa"
+                ),
+                {"r": razon_social},
+            ).scalar_one()
+        print(f"  empresa creada: id_empresa={id_empresa}")
+        return id_empresa
     finally:
         engine.dispose()
+
+
+def verificar_alta(dsn: str, admin_usuario: str) -> list[str]:
+    """Chequeos minimos de que el tenant queda usable de verdad.
+
+    Sin esto, un alta a medias (por ejemplo por el ImportError que se
+    tragaba en silencio el paso de seed) queda marcada ACTIVA igual, y el
+    primer sintoma es un 404 confuso de EmpresaService.get_id_empresa_actual
+    en el primer request real del cliente.
+    """
+    problemas: list[str] = []
+    engine = create_engine(dsn)
+    try:
+        with engine.connect() as conn:
+            if conn.execute(text("SELECT 1 FROM empresa")).first() is None:
+                problemas.append("no hay ninguna fila en 'empresa'")
+
+            id_rol = conn.execute(
+                text("SELECT id_rol FROM rol WHERE upper(nombre) = 'ADMIN'")
+            ).scalar()
+            if id_rol is None:
+                problemas.append("no existe el rol ADMIN")
+            else:
+                tiene_admin = conn.execute(
+                    text(
+                        "SELECT 1 FROM usuario u "
+                        "JOIN usuario_rol ur ON ur.id_usuario = u.id_usuario "
+                        "WHERE u.nombre_usuario = :u AND ur.id_rol = :r"
+                    ),
+                    {"u": admin_usuario, "r": id_rol},
+                ).first()
+                if tiene_admin is None:
+                    problemas.append(
+                        f"el usuario '{admin_usuario}' no tiene el rol ADMIN"
+                    )
+    finally:
+        engine.dispose()
+    return problemas
 
 
 def crear_admin(dsn: str, usuario: str, password: str | None) -> str:
@@ -223,7 +275,9 @@ def main() -> int:
         help="Para poner esta sodería en otro servidor de Postgres.",
     )
     parser.add_argument(
-        "--sin-seed", action="store_true", help="No sembrar tablas maestras."
+        "--sin-seed",
+        action="store_true",
+        help="No crear la fila de empresa (para pruebas puntuales).",
     )
     parser.add_argument(
         "--rollback",
@@ -285,9 +339,16 @@ def main() -> int:
         crear_base(db_name)
         migrar(dsn)
         if not args.sin_seed:
-            sembrar_maestros(dsn)
+            crear_empresa(dsn, args.razon_social)
         password = crear_admin(dsn, args.admin_usuario, args.admin_password)
         preparar_archivos(codigo)
+
+        if not args.sin_seed:
+            problemas = verificar_alta(dsn, args.admin_usuario)
+            if problemas:
+                raise RuntimeError(
+                    "El alta quedo incompleta:\n  - " + "\n  - ".join(problemas)
+                )
 
         with control_session() as db:
             fila = db.execute(

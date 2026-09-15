@@ -455,6 +455,31 @@ en el contrato. Sin autenticación: `POST /auth/login`, `POST /auth/token`,
   (`db`), no a `localhost`, cuando se corre vía `docker compose up` — no se
   fuerza ese valor porque no se sabe si la topología real de producción usa
   este `db` de compose o un Postgres administrado aparte.
+- ~~Un tenant nuevo (`scripts/crear_tenant.py`) no tenía fila en `empresa`,
+  y el alta no lo avisaba: `sembrar_maestros()` hacía
+  `from scripts.seed_maestros import sembrar`, ese archivo no existe, caía
+  en el `except ImportError`, imprimía un aviso y seguía como si nada. El
+  tenant quedaba ACTIVO pero roto: `EmpresaService.get_id_empresa_actual`
+  tira 404 en stock/caja/pagos de ingreso-egreso/alta de empleados, y
+  `crear_repartos_del_dia_automaticos` no crea ningún reparto (itera
+  `Empresa` vacía) sin que el scheduler lo reporte como error.~~
+  **Arreglado (2026-09-15).** Las tablas maestras de verdad (día de semana,
+  medio de pago, rol, tipo de movimiento/evento) ya venían de la migración
+  de seed (`409913c99187`), independiente de cualquier flag — eso nunca
+  fue el problema. Lo que faltaba era la fila de `empresa`, que es dato del
+  cliente (razón social) y no pertenece a una migración: se agregó
+  `crear_empresa()` en `crear_tenant.py`, que la inserta con la
+  `--razon-social` que ya recibía el script. Se borró `sembrar_maestros()`
+  (dead code: nunca hizo nada desde que existe). Se agregó
+  `verificar_alta()`: chequea que exista `empresa`, el rol ADMIN y el
+  usuario admin con ese rol; si falta algo, el alta corta con error y el
+  tenant queda en PROVISIONANDO (no ACTIVO roto). `--sin-seed` ahora
+  controla este paso (antes no controlaba nada real). Probado en vivo: alta
+  completa de un tenant de prueba (verificación en verde,
+  `EmpresaService.get_id_empresa_actual` resuelve bien) y alta con
+  `--sin-seed` (verificación correctamente detecta la falta de `empresa`
+  si se corre a mano); los dos tenants de prueba se dieron de baja con
+  `--rollback` al terminar.
 
 ---
 
