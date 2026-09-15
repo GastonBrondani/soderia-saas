@@ -7,16 +7,15 @@ de tocar nada.
 
 ## Estado actual
 
-**Nada de la migración está hecho todavía.** Este repo es una copia exacta
-del backend que corre en producción para la sodería, con un solo commit
-inicial y sin cambios.
+**Los pasos 0, 1 y 2 están hechos**, y el paso 3 (limpieza) tuvo una primera
+tanda grande ya cerrada — ver el detalle de cada uno más abajo y la "Deuda
+técnica conocida". Lo que sigue abierto son los ítems de esa sección y los
+que vaya agregando cada revisión cruzada con el frontend.
 
-El material de la migración (los archivos de `core/`, `db/`, los scripts y
-los tests) viene de un scaffold armado aparte, descomprimido en
-`../soderia-saas-scaffold/` (ajustar la ruta si está en otro lado). **Ese
-scaffold no se toca**: de ahí se copian archivos hacia este repo.
-
-El paso 0 es lo primero que hay que hacer, antes de tocar una sola línea.
+El material original de la migración (los archivos de `core/`, `db/`, los
+scripts y los tests) vino de un scaffold armado aparte en
+`../soderia-saas-scaffold/`. Ya no hace falta: todo lo que aportaba está
+copiado y evolucionado en este repo.
 
 ---
 
@@ -47,7 +46,7 @@ Convertirlo en un producto multi-cliente (SaaS). Dos cambios grandes:
 El orden no es negociable. Cada paso se termina y se commitea antes de
 empezar el siguiente.
 
-### Paso 0 — Red de seguridad (PENDIENTE, es lo primero)
+### Paso 0 — Red de seguridad (HECHO, 2026-09-14)
 
 Se corre sobre el código **sin modificar**. Copiar
 `../soderia-saas-scaffold/scripts/snapshot_openapi.py` a `scripts/` y
