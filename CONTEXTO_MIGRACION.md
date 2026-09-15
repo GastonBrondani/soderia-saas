@@ -611,6 +611,24 @@ en el contrato. Sin autenticación: `POST /auth/login`, `POST /auth/token`,
   costo del modelo elegido.
 - **Sincronización offline:** cualquier cambio en `features/sincronizacion/`
   o en la idempotencia de pagos rompe tablets en la calle. Máximo cuidado.
+- **Convención de transacciones (2026-09-15, segunda revisión cruzada):
+  los routers commitean, los services nunca.** Ningún service hace
+  `db.begin()`/`with db.begin():` ni decide si commitear mirando
+  `db.in_transaction()` — esa señal no es confiable (ver los tres bugs de
+  pérdida silenciosa más arriba: `get_current_user` ya toca la sesión del
+  request antes de que corra el handler, así que "recién empezada" nunca
+  es cierto donde importaría). El service hace su trabajo (`add`/`flush`/
+  queries) y, si algo sale mal, `db.rollback()` para dejar la sesión
+  usable; el router es quien decide cuándo terminó la operación y hace
+  `db.commit()`. Se sacó la lógica de `started_tx`/`nullcontext` de
+  `PagoService.crear()` y el `_tx()` con `begin_nested()` de
+  `catalogo/combos/service.py` (este último no tenía el bug — el
+  `db.commit()` explícito después ya lo salvaba — pero es la misma trampa
+  para el próximo que lo lea pensando que el context manager resuelve
+  todo). Si escribís un service nuevo que puede ser llamado tanto standalone
+  como anidado desde otro service (como `PagoService.crear` desde
+  `crear_pedido`), no hay abstracción mágica: el nested caller simplemente
+  no commitea (lo hace el que está más afuera), y punto.
 - ~~`PLATFORM_ADMIN_TOKEN`, `require_platform_admin()` y el path exento
   `/admin` existían sin ningún router de administración detrás — config
   que prometía una API que nunca se escribió.~~ **Borrado (2026-09-15).**

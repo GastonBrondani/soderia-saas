@@ -1,7 +1,6 @@
 # app/services/comboService.py
 from __future__ import annotations
 
-from contextlib import contextmanager
 from typing import List, Optional
 
 from sqlalchemy import select
@@ -18,22 +17,6 @@ from app.features.catalogo.combos.schemas.combo_producto import ComboProductoDet
 
 
 # ----------------- helpers -----------------
-
-@contextmanager
-def _tx(db: Session):
-    """
-    Maneja transacciones de forma segura con SQLAlchemy 2.0 (autobegin).
-    - Si la sesión ya tiene transacción iniciada (por un SELECT previo o por otra capa),
-      usamos begin_nested() para no romper.
-    - Si no, begin() normal.
-    """
-    if db.in_transaction():
-        with db.begin_nested():
-            yield
-    else:
-        with db.begin():
-            yield
-
 
 def _get_combo_or_404(db: Session, id_combo: int) -> Combo:
     obj = db.get(Combo, id_combo)
@@ -67,28 +50,27 @@ def _validar_productos_existentes(db: Session, ids_productos: List[int]) -> None
 
 def crear_combo(db: Session, payload: ComboCreate) -> Combo:
     try:
-        with _tx(db):
-            ids = [p.id_producto for p in payload.productos]
-            _validar_sin_duplicados(ids)
-            _validar_productos_existentes(db, ids)
+        ids = [p.id_producto for p in payload.productos]
+        _validar_sin_duplicados(ids)
+        _validar_productos_existentes(db, ids)
 
-            obj = Combo(
-                id_empresa=payload.id_empresa,
-                nombre=payload.nombre,
-                descripcion=payload.descripcion,
-                estado=payload.estado,
-            )
-            db.add(obj)
-            db.flush()
+        obj = Combo(
+            id_empresa=payload.id_empresa,
+            nombre=payload.nombre,
+            descripcion=payload.descripcion,
+            estado=payload.estado,
+        )
+        db.add(obj)
+        db.flush()
 
-            for item in payload.productos:
-                db.add(
-                    ComboProducto(
-                        id_combo=obj.id_combo,
-                        id_producto=item.id_producto,
-                        cantidad=item.cantidad,
-                    )
+        for item in payload.productos:
+            db.add(
+                ComboProducto(
+                    id_combo=obj.id_combo,
+                    id_producto=item.id_producto,
+                    cantidad=item.cantidad,
                 )
+            )
 
         db.commit()
         db.refresh(obj)
@@ -151,32 +133,31 @@ def actualizar_combo(db: Session, id_combo: int, payload: ComboUpdate) -> Combo:
     updates = payload.model_dump(exclude_unset=True)
 
     try:
-        with _tx(db):
-            for k in ("nombre", "descripcion", "estado"):
-                if k in updates:
-                    setattr(obj, k, updates[k])
+        for k in ("nombre", "descripcion", "estado"):
+            if k in updates:
+                setattr(obj, k, updates[k])
 
-            if "productos" in updates and updates["productos"] is not None:
-                nuevos = updates["productos"]
+        if "productos" in updates and updates["productos"] is not None:
+            nuevos = updates["productos"]
 
-                ids = [p["id_producto"] for p in nuevos]
-                _validar_sin_duplicados(ids)
-                _validar_productos_existentes(db, ids)
+            ids = [p["id_producto"] for p in nuevos]
+            _validar_sin_duplicados(ids)
+            _validar_productos_existentes(db, ids)
 
-                db.query(ComboProducto).filter(
-                    ComboProducto.id_combo == id_combo
-                ).delete(synchronize_session=False)
+            db.query(ComboProducto).filter(
+                ComboProducto.id_combo == id_combo
+            ).delete(synchronize_session=False)
 
-                for item in nuevos:
-                    db.add(
-                        ComboProducto(
-                            id_combo=id_combo,
-                            id_producto=item["id_producto"],
-                            cantidad=item["cantidad"],
-                        )
+            for item in nuevos:
+                db.add(
+                    ComboProducto(
+                        id_combo=id_combo,
+                        id_producto=item["id_producto"],
+                        cantidad=item["cantidad"],
                     )
+                )
 
-            db.add(obj)
+        db.add(obj)
 
         db.commit()
         db.refresh(obj)
@@ -210,25 +191,23 @@ def actualizar_composicion(
     _get_combo_or_404(db, id_combo)
 
     try:
-        with _tx(db):
-            ids = [p.id_producto for p in productos]
-            _validar_sin_duplicados(ids)
-            _validar_productos_existentes(db, ids)
+        ids = [p.id_producto for p in productos]
+        _validar_sin_duplicados(ids)
+        _validar_productos_existentes(db, ids)
 
-            db.query(ComboProducto).filter(
-                ComboProducto.id_combo == id_combo
-            ).delete(synchronize_session=False)
+        db.query(ComboProducto).filter(
+            ComboProducto.id_combo == id_combo
+        ).delete(synchronize_session=False)
 
-            for p in productos:
-                db.add(
-                    ComboProducto(
-                        id_combo=id_combo,
-                        id_producto=p.id_producto,
-                        cantidad=p.cantidad,
-                    )
+        for p in productos:
+            db.add(
+                ComboProducto(
+                    id_combo=id_combo,
+                    id_producto=p.id_producto,
+                    cantidad=p.cantidad,
                 )
+            )
 
-        # 🔥 ESTE COMMIT ES CLAVE
         db.commit()
 
         return obtener_combo_detalle(db, id_combo)

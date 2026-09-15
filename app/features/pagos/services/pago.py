@@ -6,7 +6,6 @@ from decimal import Decimal, ROUND_HALF_UP
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from contextlib import nullcontext
 
 from app.core.exceptions import AppError, Conflict, NotFound
 from app.features.pagos.services.idempotency import buscar_por_idempotency_key
@@ -105,142 +104,139 @@ class PagoService:
         if existente is not None:
             return existente
 
-        # OJO: `started_tx` no detecta de forma confiable si estamos
-        # anidados dentro de la transaccion de otro caller (ej.
-        # pedidos/service.py::crear_pedido). get_current_user ya corre un
-        # db.get(Usuario, ...) sobre esta misma sesion (FastAPI cachea el
-        # Depends(get_db) por request), asi que db.in_transaction() es casi
-        # siempre True aca, venga o no anidado de otro service. Por eso el
-        # caller de este metodo es responsable de commitear si lo llama
-        # standalone -- ver crear_pago/crear_ingreso/crear_egreso en
-        # pagos/router.py. No asumas que crear() commitea solo.
-        started_tx = not db.in_transaction()
-        tx_ctx = db.begin() if started_tx else nullcontext()
-
+        # Convencion del repo: los routers commitean, los services nunca.
+        # (Ver "Cosas a tener en la cabeza" en CONTEXTO_MIGRACION.md.) Esto
+        # antes intentaba detectar si estaba "anidado" en la transaccion de
+        # otro caller con `started_tx = not db.in_transaction()`, pero esa
+        # señal es inutil: get_current_user ya toca esta misma sesion antes
+        # de que el handler corra (FastAPI cachea Depends(get_db) por
+        # request), asi que in_transaction() da True casi siempre, haya o
+        # no un caller anidado real. Con la convencion nueva no hace falta
+        # adivinar nada: este metodo solo hace add/flush, nunca begin ni
+        # commit, y quien lo llama (crear_pago/crear_ingreso/crear_egreso/
+        # crear_pago_libre en pagos/, crear_pedido/cancelar_deuda en
+        # pedidos/service.py) es responsable de su propio db.commit().
         try:
-            with tx_ctx:
-                mp = db.execute(
-                    select(MedioPago).where(MedioPago.id_medio_pago == id_medio_pago)
+            mp = db.execute(
+                select(MedioPago).where(MedioPago.id_medio_pago == id_medio_pago)
+            ).scalar_one_or_none()
+            if mp is None:
+                raise AppError("id_medio_pago inexistente.")
+            bucket = _bucket_medio_pago(mp.nombre)
+
+            if legajo is None and tipo_pago in {TipoPago.COBRO_PEDIDO, TipoPago.PAGO_DEUDA}:
+                raise AppError("Falta legajo para pago de cliente.")
+
+            # --- cuenta (si aplica) ---
+            cuenta = None
+            if legajo is not None:
+                if id_cuenta is None:
+                    ids = (
+                        db.execute(
+                            select(ClienteCuenta.id_cuenta).where(
+                                ClienteCuenta.legajo == legajo
+                            )
+                        )
+                        .scalars()
+                        .all()
+                    )
+                    if not ids:
+                        raise Conflict("El cliente no tiene cuenta creada.")
+                    if len(ids) > 1:
+                        raise AppError(
+                            "El cliente tiene más de una cuenta. Enviar id_cuenta.",
+                        )
+                    id_cuenta = ids[0]
+
+                cuenta = db.execute(
+                    select(ClienteCuenta)
+                    .where(
+                        ClienteCuenta.legajo == legajo,
+                        ClienteCuenta.id_cuenta == id_cuenta,
+                    )
+                    .with_for_update()
                 ).scalar_one_or_none()
-                if mp is None:
-                    raise AppError("id_medio_pago inexistente.")
-                bucket = _bucket_medio_pago(mp.nombre)
+                if cuenta is None:
+                    raise NotFound("Cuenta no encontrada para ese cliente.")
 
-                if legajo is None and tipo_pago in {TipoPago.COBRO_PEDIDO, TipoPago.PAGO_DEUDA}:
-                    raise AppError("Falta legajo para pago de cliente.")
+            # --- reparto (si aplica) ---
+            rep = None
+            if id_repartodia is not None:
+                rep = db.execute(
+                    select(RepartoDia)
+                    .where(RepartoDia.id_repartodia == id_repartodia)
+                    .with_for_update()
+                ).scalar_one_or_none()
+                if rep is None:
+                    raise NotFound("Reparto del día no encontrado")
 
-                # --- cuenta (si aplica) ---
-                cuenta = None
-                if legajo is not None:
-                    if id_cuenta is None:
-                        ids = (
-                            db.execute(
-                                select(ClienteCuenta.id_cuenta).where(
-                                    ClienteCuenta.legajo == legajo
-                                )
-                            )
-                            .scalars()
-                            .all()
-                        )
-                        if not ids:
-                            raise Conflict("El cliente no tiene cuenta creada.")
-                        if len(ids) > 1:
-                            raise AppError(
-                                "El cliente tiene más de una cuenta. Enviar id_cuenta.",
-                            )
-                        id_cuenta = ids[0]
+            # --- crear pago ---
+            pago = Pago(
+                id_empresa=id_empresa,
+                legajo=legajo,
+                id_pedido=id_pedido,
+                id_repartodia=id_repartodia,
+                id_medio_pago=id_medio_pago,
+                fecha=fecha,
+                monto=monto,
+                tipo_pago=tipo_pago,
+                observacion=observacion,
+                id_cuenta=id_cuenta,
+                id_cliente_servicio_periodo=id_cliente_servicio_periodo,
+                idempotency_key=idempotency_key,
+                client_uuid=client_uuid,
+            )
+            db.add(pago)
+            db.flush()
 
-                    cuenta = db.execute(
-                        select(ClienteCuenta)
-                        .where(
-                            ClienteCuenta.legajo == legajo,
-                            ClienteCuenta.id_cuenta == id_cuenta,
-                        )
-                        .with_for_update()
-                    ).scalar_one_or_none()
-                    if cuenta is None:
-                        raise NotFound("Cuenta no encontrada para ese cliente.")
+            # --- caja empresa ---
+            es_egreso = tipo_pago == TipoPago.EGRESO_EMPRESA
+            id_tipo_mov = id_tipo_mov_egreso if es_egreso else id_tipo_mov_ingreso
+            tipo = "egreso" if es_egreso else "ingreso"
 
-                # --- reparto (si aplica) ---
-                rep = None
-                if id_repartodia is not None:
-                    rep = db.execute(
-                        select(RepartoDia)
-                        .where(RepartoDia.id_repartodia == id_repartodia)
-                        .with_for_update()
-                    ).scalar_one_or_none()
-                    if rep is None:
-                        raise NotFound("Reparto del día no encontrado")
+            monto_caja = -monto if es_egreso else monto
+            mov = CajaEmpresa(
+                id_empresa=id_empresa,
+                id_tipo_movimiento=id_tipo_mov,
+                id_medio_pago=id_medio_pago,
+                fecha=fecha,
+                tipo=tipo,
+                monto=monto_caja,
+                observacion=(
+                    f"PAGO#{pago.id_pago} {tipo_pago} - {observacion}"
+                    if observacion
+                    else f"PAGO#{pago.id_pago} {tipo_pago}"
+                ),
+            )
+            db.add(mov)
 
-                # --- crear pago ---
-                pago = Pago(
-                    id_empresa=id_empresa,
-                    legajo=legajo,
-                    id_pedido=id_pedido,
-                    id_repartodia=id_repartodia,
-                    id_medio_pago=id_medio_pago,
-                    fecha=fecha,
-                    monto=monto,
-                    tipo_pago=tipo_pago,
-                    observacion=observacion,
-                    id_cuenta=id_cuenta,  # ✅ AGREGAR
-                    id_cliente_servicio_periodo=id_cliente_servicio_periodo,
-                    idempotency_key=idempotency_key,
-                    client_uuid=client_uuid,
-                )
-                db.add(pago)
-                db.flush()
+            # --- impactar cuenta/reparto ---
+            if (
+                cuenta is not None
+                and impactar_cuenta
+                and tipo_pago in {TipoPago.COBRO_PEDIDO, TipoPago.PAGO_DEUDA}
+            ):
+                _aplicar_pago_a_cuenta(cuenta, monto)
 
-                # --- caja empresa ---
-                es_egreso = tipo_pago == TipoPago.EGRESO_EMPRESA
-                id_tipo_mov = id_tipo_mov_egreso if es_egreso else id_tipo_mov_ingreso
-                tipo = "egreso" if es_egreso else "ingreso"
+            if (
+                rep is not None
+                and impactar_reparto
+                and tipo_pago in {TipoPago.COBRO_PEDIDO, TipoPago.PAGO_DEUDA}
+            ):
+                _sumar_recaudacion_reparto(rep, bucket, monto)
 
-                monto_caja = -monto if es_egreso else monto
-                mov = CajaEmpresa(
-                    id_empresa=id_empresa,
-                    id_tipo_movimiento=id_tipo_mov,
-                    id_medio_pago=id_medio_pago,
-                    fecha=fecha,
-                    tipo=tipo,
-                    monto=monto_caja,
-                    observacion=(
-                        f"PAGO#{pago.id_pago} {tipo_pago} - {observacion}"
-                        if observacion
-                        else f"PAGO#{pago.id_pago} {tipo_pago}"
-                    ),
-                )
-                db.add(mov)
-
-                # --- impactar cuenta/reparto ---
-                if (
-                    cuenta is not None
-                    and impactar_cuenta
-                    and tipo_pago in {TipoPago.COBRO_PEDIDO, TipoPago.PAGO_DEUDA}
-                ):
-                    _aplicar_pago_a_cuenta(cuenta, monto)
-
-                if (
-                    rep is not None
-                    and impactar_reparto
-                    and tipo_pago in {TipoPago.COBRO_PEDIDO, TipoPago.PAGO_DEUDA}
-                ):
-                    _sumar_recaudacion_reparto(rep, bucket, monto)
-
-                return pago
+            return pago
 
         except IntegrityError:
             # Carrera entre dos reintentos del mismo pago: el índice único de
             # idempotency_key rechazó el segundo. Devolvemos el que sí se creó.
-            if started_tx:
-                db.rollback()
+            db.rollback()
             existente = buscar_por_idempotency_key(db, Pago, idempotency_key)
             if existente is not None:
                 return existente
             raise
         except SQLAlchemyError:
-            if started_tx:
-                db.rollback()
+            db.rollback()
             raise
 
     @staticmethod
