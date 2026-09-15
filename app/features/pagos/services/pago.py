@@ -105,6 +105,15 @@ class PagoService:
         if existente is not None:
             return existente
 
+        # OJO: `started_tx` no detecta de forma confiable si estamos
+        # anidados dentro de la transaccion de otro caller (ej.
+        # pedidos/service.py::crear_pedido). get_current_user ya corre un
+        # db.get(Usuario, ...) sobre esta misma sesion (FastAPI cachea el
+        # Depends(get_db) por request), asi que db.in_transaction() es casi
+        # siempre True aca, venga o no anidado de otro service. Por eso el
+        # caller de este metodo es responsable de commitear si lo llama
+        # standalone -- ver crear_pago/crear_ingreso/crear_egreso en
+        # pagos/router.py. No asumas que crear() commitea solo.
         started_tx = not db.in_transaction()
         tx_ctx = db.begin() if started_tx else nullcontext()
 

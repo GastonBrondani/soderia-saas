@@ -249,6 +249,63 @@ autenticación reales. Actualizá esta sección con esos datos.
 **No arregles nada de esto fuera del paso 3**, y no mezcles estos arreglos
 con movimientos de archivos.
 
+**Bugs criticos de pérdida silenciosa de datos, encontrados por los tests
+de integración del punto 7 (2026-09-15).** Esto es lo más serio que salió
+de toda la revisión cruzada: tres endpoints devolvían 200 (o, en un caso,
+directamente reventaban) sin persistir nada, y ningún test lo detectaba
+porque ninguno pegaba contra un Postgres real end-to-end.
+
+- ~~`POST /pagos` (`crear_pago`) nunca commiteaba.~~ **Arreglado.**
+  `PagoService.crear()` intenta detectar si "ya está anidado" en la
+  transacción de otro caller con `started_tx = not db.in_transaction()`, y
+  si es así usa `nullcontext()` en vez de `db.begin()` (para no commitear
+  antes de tiempo si lo llama `pedidos/service.py::crear_pedido`, que sí
+  commitea al final). El problema: `get_current_user` ya hace
+  `db.get(Usuario, ...)` sobre la misma sesión antes de que el handler
+  corra (FastAPI cachea `Depends(get_db)` por request), así que
+  `db.in_transaction()` es casi siempre `True` **aunque no haya ningún
+  caller anidado real**. `crear_pago` no tenía ningún `db.commit()` propio
+  confiando en que el service lo resolvía solo. Resultado: el pago se
+  creaba, se devolvía 200 con un `id_pago` real, y desaparecía en silencio
+  al cerrarse la sesión — exactamente el endpoint que usa
+  `_syncPago` de la cola offline. Arreglo: `crear_pago` ahora hace
+  `db.commit()` + `db.refresh()` explícito, igual que ya hacían
+  `crear_ingreso`/`crear_egreso`. `PagoService.crear()` no se tocó (sigue
+  sirviendo bien al caso anidado real de `crear_pedido`), pero quedó
+  documentado en el propio método que el caller es responsable de
+  commitear.
+- ~~`POST /pagos/cancelar-deuda` (`cancelar_deuda`) fallaba siempre que se
+  llamaba autenticado de verdad.~~ **Arreglado.** Mismo problema de fondo,
+  peor síntoma: esta función envolvía todo su cuerpo en
+  `with db.begin():`. Por la misma razón de arriba (`get_current_user` ya
+  autobegin-ea la sesión), ese `db.begin()` explícito chocaba con la
+  transacción ya iniciada y tiraba `InvalidRequestError: A transaction is
+  already begun on this Session` — capturado como `SQLAlchemyError` y
+  relanzado, es decir, **este endpoint no funcionaba nunca** en uso real
+  (solo "andaba" en una llamada manual con sesión nueva, como una prueba
+  aislada sin pasar por `get_current_user`). Arreglo: se sacó el
+  `with db.begin():`, se dejó el cuerpo con `try/except` plano y
+  `db.commit()` explícito al final (mismo patrón que
+  `crear_pedido`, en el mismo archivo).
+- ~~`RecorridoService.abrir_recorrido` con `detalle_stock_inicial` vacío
+  perdía el recorrido.~~ **Arreglado.** El comentario del código decía "el
+  último `ajustar_stock` ya hizo commit" — cierto si hay al menos un ítem,
+  falso si la lista viene vacía (el `for` nunca corre). Se agregó un
+  `db.commit()` explícito después del loop, sin depender de que haya
+  ítems.
+
+Los tres se encontraron con `tests/test_multi_tenant.py`, que crea
+soderías de prueba de verdad contra Postgres y pega HTTP autenticado de
+punta a punta — exactamente el tipo de test que "es una sesión nueva, sin
+`get_current_user` de por medio" que las pruebas manuales anteriores en
+este documento (con `usar_tenant()`/`sesion_tenant()` directo) no
+reproducían. Ojo con este patrón en cualquier código nuevo: **una sesión
+recién creada por `get_db()` casi nunca llega "limpia" a tu service**, la
+comparten todas las `Depends()` del request. No asumas `started_tx`/
+`in_transaction()` como señal confiable de si sos el primero en tocar la
+sesión; y no envuelvas un service en `with db.begin():` si en algún
+momento puede correr detrás de `get_current_user` (o sea, siempre).
+
 **Rompen el contrato de la API** (coordinar con Flutter antes):
 
 - ~~`id_empresa: Optional[int]/int = Query(...)` en `caja/router.py` (4

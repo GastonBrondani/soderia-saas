@@ -31,8 +31,13 @@ class RecorridoService:
                     observacion="Carga inicial de recorrido",
                     id_recorrido=rec.id_recorrido,
                 )
-            # si todo ok, el último ajustar_stock ya hizo commit,
-            # pero por claridad cerramos refrescando el recorrido:
+            # Si detalle_stock_inicial no esta vacio, el ultimo ajustar_stock
+            # ya hizo commit. Si esta vacio, el for no corre nunca y el
+            # commit de aca abajo es el unico que persiste el recorrido
+            # (sin esto, "abrir un recorrido sin stock inicial" creaba el
+            # registro, lo devolvia en la respuesta, y desaparecia en
+            # silencio al cerrarse la sesion).
+            db.commit()
             db.refresh(rec)
             return rec
 

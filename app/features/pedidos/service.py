@@ -623,96 +623,106 @@ class PedidoService:
             raise AppError("El monto debe ser mayor a 0.")
 
         try:
-            with db.begin():
-                # 1) Validar medio de pago (opcional, PagoService también lo valida)
-                mp = db.execute(
-                    select(MedioPago).where(
-                        MedioPago.id_medio_pago == data.id_medio_pago
-                    )
-                ).scalar_one_or_none()
-                if mp is None:
-                    raise AppError("id_medio_pago inexistente.")
+            # OJO: nada de `with db.begin():` aca. get_current_user ya corre
+            # una query sobre esta misma sesion (FastAPI cachea el
+            # Depends(get_db) por request), asi que la sesion casi siempre
+            # llega con una transaccion ya auto-iniciada por SQLAlchemy. Un
+            # `db.begin()` explicito en ese caso tira "A transaction is
+            # already begun on this Session" -- este endpoint fallaba
+            # siempre que se llamaba autenticado de verdad. db.commit()
+            # simple funciona haya o no una transaccion auto-iniciada.
 
-                # 2) Traer y bloquear reparto_dia (para obtener empresa + evitar carreras)
-                rep = db.execute(
-                    select(RepartoDia)
-                    .where(RepartoDia.id_repartodia == data.id_repartodia)
-                    .with_for_update()
-                ).scalar_one_or_none()
-                if rep is None:
-                    raise NotFound("Reparto del día no encontrado")
+            # 1) Validar medio de pago (opcional, PagoService también lo valida)
+            mp = db.execute(
+                select(MedioPago).where(
+                    MedioPago.id_medio_pago == data.id_medio_pago
+                )
+            ).scalar_one_or_none()
+            if mp is None:
+                raise AppError("id_medio_pago inexistente.")
 
-                # 3) ✅ Crear PAGO (esto debe:
-                #    - crear pago
-                #    - crear caja_empresa
-                #    - actualizar cliente_cuenta (deuda/saldo)
-                #    - sumar recaudación del reparto (si lo implementaste en PagoService)
-                id_empresa = getattr(rep, "id_empresa", None)
-                if id_empresa is None:
-                    # Si tu RepartoDia no tiene id_empresa, agregá id_empresa al schema y usá data.id_empresa acá.
-                    raise AppError("No se pudo resolver id_empresa para el pago.")
+            # 2) Traer y bloquear reparto_dia (para obtener empresa + evitar carreras)
+            rep = db.execute(
+                select(RepartoDia)
+                .where(RepartoDia.id_repartodia == data.id_repartodia)
+                .with_for_update()
+            ).scalar_one_or_none()
+            if rep is None:
+                raise NotFound("Reparto del día no encontrado")
 
-                PagoService.crear(
+            # 3) ✅ Crear PAGO (esto debe:
+            #    - crear pago
+            #    - crear caja_empresa
+            #    - actualizar cliente_cuenta (deuda/saldo)
+            #    - sumar recaudación del reparto (si lo implementaste en PagoService)
+            id_empresa = getattr(rep, "id_empresa", None)
+            if id_empresa is None:
+                # Si tu RepartoDia no tiene id_empresa, agregá id_empresa al schema y usá data.id_empresa acá.
+                raise AppError("No se pudo resolver id_empresa para el pago.")
+
+            PagoService.crear(
+                db,
+                id_empresa=id_empresa,
+                id_medio_pago=data.id_medio_pago,
+                fecha=datetime.now(),
+                monto=monto,
+                tipo_pago="PAGO_DEUDA",
+                observacion=data.observacion or "Pago de cuenta sin pedido",
+                legajo=data.legajo,
+                id_repartodia=data.id_repartodia,
+            )
+
+            # 4) Registrar en cliente_reparto_dia (visita sin pedido, solo pago)
+            ClienteRepartoDiaService.upsert_desde_pedido(
+                db=db,
+                id_repartodia=data.id_repartodia,
+                legajo=data.legajo,
+                monto_abonado=monto,
+                observacion=data.observacion or "Pago de cuenta sin pedido",
+                bidones_entregado=None,
+            )
+
+            # 5) Devolver la cuenta actualizada (releer)
+            cuenta = (
+                db.execute(
+                    select(ClienteCuenta).where(ClienteCuenta.legajo == data.legajo)
+                )
+                .scalars()
+                .first()
+            )
+
+            if cuenta is None:
+                raise Conflict("El cliente no tiene cuenta creada.")
+
+            try:
+                registrar_evento_cliente(
                     db,
-                    id_empresa=id_empresa,
-                    id_medio_pago=data.id_medio_pago,
-                    fecha=datetime.now(),
-                    monto=monto,
-                    tipo_pago="PAGO_DEUDA",
-                    observacion=data.observacion or "Pago de cuenta sin pedido",
                     legajo=data.legajo,
-                    id_repartodia=data.id_repartodia,
-                )
-
-                # 4) Registrar en cliente_reparto_dia (visita sin pedido, solo pago)
-                ClienteRepartoDiaService.upsert_desde_pedido(
-                    db=db,
-                    id_repartodia=data.id_repartodia,
-                    legajo=data.legajo,
-                    monto_abonado=monto,
+                    codigo_evento=TipoEventoCodigoEnum.PAGO_DEUDA_REGISTRADO,
                     observacion=data.observacion or "Pago de cuenta sin pedido",
-                    bidones_entregado=None,
+                    datos={
+                        "monto": str(monto),
+                        "deuda_restante": str(cuenta.deuda),
+                        "saldo_actual": str(cuenta.saldo),
+                    },
                 )
-
-                # 5) Devolver la cuenta actualizada (releer)
-                cuenta = (
-                    db.execute(
-                        select(ClienteCuenta).where(ClienteCuenta.legajo == data.legajo)
-                    )
-                    .scalars()
-                    .first()
-                )
-
-                if cuenta is None:
-                    raise Conflict("El cliente no tiene cuenta creada.")
-
-                try:
+                if _q2(cuenta.deuda) == Decimal("0"):
                     registrar_evento_cliente(
                         db,
                         legajo=data.legajo,
-                        codigo_evento=TipoEventoCodigoEnum.PAGO_DEUDA_REGISTRADO,
-                        observacion=data.observacion or "Pago de cuenta sin pedido",
-                        datos={
-                            "monto": str(monto),
-                            "deuda_restante": str(cuenta.deuda),
-                            "saldo_actual": str(cuenta.saldo),
-                        },
+                        codigo_evento=TipoEventoCodigoEnum.DEUDA_CANCELADA_TOTAL,
+                        observacion="Deuda saldada completamente",
+                        datos={"monto_pagado": str(monto)},
                     )
-                    if _q2(cuenta.deuda) == Decimal("0"):
-                        registrar_evento_cliente(
-                            db,
-                            legajo=data.legajo,
-                            codigo_evento=TipoEventoCodigoEnum.DEUDA_CANCELADA_TOTAL,
-                            observacion="Deuda saldada completamente",
-                            datos={"monto_pagado": str(monto)},
-                        )
-                except RuntimeError:
-                    pass
+            except RuntimeError:
+                pass
 
-                db.flush()
-                return ClienteCuentaOut.model_validate(cuenta)
+            db.commit()
+            db.refresh(cuenta)
+            return ClienteCuentaOut.model_validate(cuenta)
 
         except AppError:
+            db.rollback()
             raise
         except SQLAlchemyError:
             db.rollback()

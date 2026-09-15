@@ -42,7 +42,7 @@ def crear_pago(payload: PagoCreate, db: Session = Depends(get_db)):
     Crea un pago. Soporta idempotencia (offline sync): si llega un
     `idempotency_key` ya usado, no se duplica el pago y se devuelve el original.
     """
-    return PagoService.crear(
+    pago = PagoService.crear(
         db,
         id_empresa=EmpresaService.get_id_empresa_actual(db),
         id_medio_pago=payload.id_medio_pago,
@@ -57,6 +57,9 @@ def crear_pago(payload: PagoCreate, db: Session = Depends(get_db)):
         idempotency_key=payload.idempotency_key,
         client_uuid=payload.client_uuid,
     )
+    db.commit()
+    db.refresh(pago)
+    return pago
 
 
 @router.post("/ingreso", response_model=PagoOut)
