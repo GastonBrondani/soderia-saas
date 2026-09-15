@@ -2,8 +2,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .cliente import Cliente
-    from .diaSemana import DiaSemana
+    from app.features.clientes.models.cliente import Cliente
+    from app.features.maestros.models.dia_semana import DiaSemana
 
 from sqlalchemy import SmallInteger, String, Integer, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship

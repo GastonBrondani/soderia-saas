@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING, List
 
 
 if TYPE_CHECKING:
-    from .producto import Producto
+    from app.features.catalogo.productos.models.producto import Producto
     from .cliente import Cliente
-    from .movimientoEnvaseCliente import MovimientoEnvaseCliente
+    from app.features.inventario.envases.models.movimiento_envase_cliente import MovimientoEnvaseCliente
 
 from sqlalchemy import Integer, String, Date, ForeignKey, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship

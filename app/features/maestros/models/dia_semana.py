@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
-    from .clienteDiaSemana import ClienteDiaSemana
+    from app.features.repartos.agenda.models.cliente_dia_semana import ClienteDiaSemana
 
 from sqlalchemy import SmallInteger, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship

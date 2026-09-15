@@ -4,10 +4,10 @@ from sqlalchemy import Integer, String, Text, Boolean, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 if TYPE_CHECKING:
-    from .empresa import Empresa
-    from .comboProducto import ComboProducto
-    from .listaPrecioCombo import ListaPrecioCombo
-    from .pedidoProducto import PedidoProducto
+    from app.features.empresas.models.empresa import Empresa
+    from app.features.catalogo.combos.models.combo_producto import ComboProducto
+    from app.features.catalogo.listas_precios.models.lista_precio_combo import ListaPrecioCombo
+    from app.features.pedidos.models.pedido_producto import PedidoProducto
 
 
 class Combo(Base):

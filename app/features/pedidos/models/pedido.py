@@ -4,13 +4,13 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Optional, List
 
 if TYPE_CHECKING:
-    from .cliente import Cliente
-    from .empresa import Empresa
-    from .medioPago import MedioPago
-    from .movimientoStock import MovimientoStock
-    from .pedidoProducto import PedidoProducto
-    from .repartoDia import RepartoDia
-    from .movimientoEnvaseCliente import MovimientoEnvaseCliente
+    from app.features.clientes.models.cliente import Cliente
+    from app.features.empresas.models.empresa import Empresa
+    from app.features.maestros.models.medio_pago import MedioPago
+    from app.features.inventario.movimientos.models.movimiento_stock import MovimientoStock
+    from app.features.pedidos.models.pedido_producto import PedidoProducto
+    from app.features.repartos.repartos_dia.models.reparto_dia import RepartoDia
+    from app.features.inventario.envases.models.movimiento_envase_cliente import MovimientoEnvaseCliente
     
 
 from sqlalchemy import Integer, String, Text, Numeric, DateTime, ForeignKey

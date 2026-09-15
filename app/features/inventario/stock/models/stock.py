@@ -2,8 +2,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .producto import Producto
-    from .empresa import Empresa
+    from app.features.catalogo.productos.models.producto import Producto
+    from app.features.empresas.models.empresa import Empresa
 
 from sqlalchemy import Integer, ForeignKey, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship

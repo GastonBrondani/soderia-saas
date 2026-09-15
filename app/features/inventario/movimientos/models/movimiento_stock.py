@@ -3,9 +3,9 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional, List
 
 if TYPE_CHECKING:
-    from .producto import Producto
-    from .recorrido import Recorrido
-    from .pedido import Pedido
+    from app.features.catalogo.productos.models.producto import Producto
+    from app.features.repartos.recorridos.models.recorrido import Recorrido
+    from app.features.pedidos.models.pedido import Pedido
 
 from sqlalchemy import Integer, String, Text, DateTime, ForeignKey, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship

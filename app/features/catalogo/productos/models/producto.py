@@ -3,13 +3,13 @@ from typing import TYPE_CHECKING, List, Optional
 from decimal import Decimal
 
 if TYPE_CHECKING:
-    from .listaPrecioProducto import ListaPrecioProducto
-    from .movimientoStock import MovimientoStock
-    from .pedidoProducto import PedidoProducto
-    from .productoCliente import ProductoCliente
-    from .stock import Stock
-    from .comboProducto import ComboProducto
-    from .movimientoEnvaseCliente import MovimientoEnvaseCliente
+    from app.features.catalogo.listas_precios.models.lista_precio_producto import ListaPrecioProducto
+    from app.features.inventario.movimientos.models.movimiento_stock import MovimientoStock
+    from app.features.pedidos.models.pedido_producto import PedidoProducto
+    from app.features.clientes.models.producto_cliente import ProductoCliente
+    from app.features.inventario.stock.models.stock import Stock
+    from app.features.catalogo.combos.models.combo_producto import ComboProducto
+    from app.features.inventario.envases.models.movimiento_envase_cliente import MovimientoEnvaseCliente
     
 from sqlalchemy import Integer, String, Numeric, Text, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship

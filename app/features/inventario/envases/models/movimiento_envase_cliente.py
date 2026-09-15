@@ -3,10 +3,10 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from .cliente import Cliente
-    from .producto import Producto
-    from .repartoDia import RepartoDia
-    from .pedido import Pedido
+    from app.features.clientes.models.cliente import Cliente
+    from app.features.catalogo.productos.models.producto import Producto
+    from app.features.repartos.repartos_dia.models.reparto_dia import RepartoDia
+    from app.features.pedidos.models.pedido import Pedido
 
 from sqlalchemy import Integer, String, Text, DateTime, ForeignKey, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship

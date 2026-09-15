@@ -4,8 +4,8 @@ from typing import List
 
 
 if TYPE_CHECKING:
-    from .cajaEmpresa import CajaEmpresa
-    from .pedido import Pedido
+    from app.features.caja.models.caja_empresa import CajaEmpresa
+    from app.features.pedidos.models.pedido import Pedido
 
 from sqlalchemy import Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship

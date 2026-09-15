@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING,Optional
 
 if TYPE_CHECKING:
-    from .usuarioRol import UsuarioRol
+    from app.features.usuarios.models.usuario_rol import UsuarioRol
 
 from sqlalchemy import Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship

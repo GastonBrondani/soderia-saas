@@ -3,10 +3,10 @@ from typing import TYPE_CHECKING, List, Optional
 from decimal import Decimal
 
 if TYPE_CHECKING:
-    from .empleado import Empleado
-    from .repartoDia import RepartoDia
-    from .camionReparto import CamionReparto
-    from .movimientoStock import MovimientoStock
+    from app.features.empleados.models.empleado import Empleado
+    from app.features.repartos.repartos_dia.models.reparto_dia import RepartoDia
+    from app.features.repartos.camiones.models.camion_reparto import CamionReparto
+    from app.features.inventario.movimientos.models.movimiento_stock import MovimientoStock
 
 from sqlalchemy import Integer, String, Numeric, Text, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship

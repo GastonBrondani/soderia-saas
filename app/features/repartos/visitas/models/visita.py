@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .cliente import Cliente 
+    from app.features.clientes.models.cliente import Cliente 
 
 from sqlalchemy import Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship

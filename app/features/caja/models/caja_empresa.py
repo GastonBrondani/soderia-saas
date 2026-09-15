@@ -4,9 +4,9 @@ from decimal import Decimal
 from typing import TYPE_CHECKING,List
 
 if TYPE_CHECKING:
-    from .empresa import Empresa
-    from .tipoMovimientoCaja import TipoMovimientoCaja
-    from .medioPago import MedioPago
+    from app.features.empresas.models.empresa import Empresa
+    from app.features.maestros.models.tipo_movimiento_caja import TipoMovimientoCaja
+    from app.features.maestros.models.medio_pago import MedioPago
 
 from sqlalchemy import (
     Integer,

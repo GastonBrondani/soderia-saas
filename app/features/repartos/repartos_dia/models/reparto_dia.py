@@ -4,12 +4,12 @@ from decimal import Decimal
 from datetime import date
 
 if TYPE_CHECKING:
-    from .empresa import Empresa
-    from .usuario import Usuario
-    from .clienteRepartoDia import ClienteRepartoDia
-    from .recorrido import Recorrido
-    from .pedido import Pedido
-    from .movimientoEnvaseCliente import MovimientoEnvaseCliente
+    from app.features.empresas.models.empresa import Empresa
+    from app.features.usuarios.models.usuario import Usuario
+    from app.features.repartos.repartos_dia.models.cliente_reparto_dia import ClienteRepartoDia
+    from app.features.repartos.recorridos.models.recorrido import Recorrido
+    from app.features.pedidos.models.pedido import Pedido
+    from app.features.inventario.envases.models.movimiento_envase_cliente import MovimientoEnvaseCliente
 
 from sqlalchemy import Integer, Date, Numeric, Text, ForeignKey, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship

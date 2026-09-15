@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
-    from .historico import Historico
+    from app.features.auditoria.models.historico import Historico
 
 from sqlalchemy import Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship

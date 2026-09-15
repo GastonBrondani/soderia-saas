@@ -5,8 +5,8 @@ from sqlalchemy import ForeignKey, Numeric
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 if TYPE_CHECKING:
-    from .listaDePrecios import ListaDePrecios
-    from .clienteServicio import ClienteServicio
+    from app.features.catalogo.listas_precios.models.lista_de_precios import ListaDePrecios
+    from app.features.catalogo.servicios.models.cliente_servicio import ClienteServicio
 
 
 class ListaPrecioServicio(Base):

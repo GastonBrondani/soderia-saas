@@ -2,9 +2,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
-    from .listaPrecioProducto import ListaPrecioProducto
-    from .listaPrecioCombo import ListaPrecioCombo
-    from .listaPrecioServicio import ListaPrecioServicio
+    from app.features.catalogo.listas_precios.models.lista_precio_producto import ListaPrecioProducto
+    from app.features.catalogo.listas_precios.models.lista_precio_combo import ListaPrecioCombo
+    from app.features.catalogo.listas_precios.models.lista_precio_servicio import ListaPrecioServicio
 
 from sqlalchemy import Integer, String, DateTime, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship

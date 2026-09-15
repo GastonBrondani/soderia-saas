@@ -2,10 +2,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List, Optional
 
 if TYPE_CHECKING:
-    from .cliente import Cliente
-    from .empleado import Empleado
-    from .repartoDia import RepartoDia
-    from .usuarioRol import UsuarioRol
+    from app.features.clientes.models.cliente import Cliente
+    from app.features.empleados.models.empleado import Empleado
+    from app.features.repartos.repartos_dia.models.reparto_dia import RepartoDia
+    from app.features.usuarios.models.usuario_rol import UsuarioRol
 
 from sqlalchemy import Integer, String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship

@@ -3,8 +3,8 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .listaDePrecios import ListaDePrecios
-    from .producto import Producto
+    from app.features.catalogo.listas_precios.models.lista_de_precios import ListaDePrecios
+    from app.features.catalogo.productos.models.producto import Producto
 
 from sqlalchemy import Integer, Numeric, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship

@@ -2,21 +2,21 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional, List
 
 if TYPE_CHECKING:
-    from .empresa import Empresa
-    from .persona import Persona
-    from .clienteCuenta import ClienteCuenta
-    from .clienteDiaSemana import ClienteDiaSemana
-    from .clienteRepartoDia import ClienteRepartoDia
-    from .direccionCliente import DireccionCliente
-    from .documentos import Documentos
-    from .emailCliente import MailCliente
-    from .historico import Historico
-    from .pedido import Pedido
-    from .productoCliente import ProductoCliente
-    from .telefonoCliente import TelefonoCliente
-    from .usuario import Usuario
-    from .visita import Visita
-    from .movimientoEnvaseCliente import MovimientoEnvaseCliente
+    from app.features.empresas.models.empresa import Empresa
+    from app.features.personas.models.persona import Persona
+    from app.features.clientes.models.cliente_cuenta import ClienteCuenta
+    from app.features.repartos.agenda.models.cliente_dia_semana import ClienteDiaSemana
+    from app.features.repartos.repartos_dia.models.cliente_reparto_dia import ClienteRepartoDia
+    from app.features.clientes.models.direccion_cliente import DireccionCliente
+    from app.features.documentos.models.documentos import Documentos
+    from app.features.clientes.models.email_cliente import MailCliente
+    from app.features.auditoria.models.historico import Historico
+    from app.features.pedidos.models.pedido import Pedido
+    from app.features.clientes.models.producto_cliente import ProductoCliente
+    from app.features.clientes.models.telefono_cliente import TelefonoCliente
+    from app.features.usuarios.models.usuario import Usuario
+    from app.features.repartos.visitas.models.visita import Visita
+    from app.features.inventario.envases.models.movimiento_envase_cliente import MovimientoEnvaseCliente
 
 from sqlalchemy import Integer, Text, ForeignKey, BigInteger
 from sqlalchemy.orm import Mapped, mapped_column, relationship

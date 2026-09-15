@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from .cliente import Cliente
+    from app.features.clientes.models.cliente import Cliente
 
 from sqlalchemy import Integer, String, Text, DateTime, ForeignKey, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship

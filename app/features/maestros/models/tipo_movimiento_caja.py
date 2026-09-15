@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .cajaEmpresa import CajaEmpresa
+    from app.features.caja.models.caja_empresa import CajaEmpresa
 
 from sqlalchemy import Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship

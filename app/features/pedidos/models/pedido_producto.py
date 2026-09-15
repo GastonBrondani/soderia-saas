@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from .pedido import Pedido
-    from .producto import Producto
-    from .combo import Combo
+    from app.features.catalogo.productos.models.producto import Producto
+    from app.features.catalogo.combos.models.combo import Combo
 
 from sqlalchemy import Integer, Numeric, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship

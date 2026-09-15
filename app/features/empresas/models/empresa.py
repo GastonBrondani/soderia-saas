@@ -2,14 +2,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
-    from .cajaEmpresa import CajaEmpresa
-    from .camionReparto import CamionReparto
-    from .cliente import Cliente
-    from .empleado import Empleado
-    from .cuentaBancariaEmpresa import CuentaBancariaEmpresa
-    from .pedido import Pedido
-    from .repartoDia import RepartoDia
-    from .stock import Stock
+    from app.features.caja.models.caja_empresa import CajaEmpresa
+    from app.features.repartos.camiones.models.camion_reparto import CamionReparto
+    from app.features.clientes.models.cliente import Cliente
+    from app.features.empleados.models.empleado import Empleado
+    from app.features.empresas.models.cuenta_bancaria_empresa import CuentaBancariaEmpresa
+    from app.features.pedidos.models.pedido import Pedido
+    from app.features.repartos.repartos_dia.models.reparto_dia import RepartoDia
+    from app.features.inventario.stock.models.stock import Stock
 
 from sqlalchemy import Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship

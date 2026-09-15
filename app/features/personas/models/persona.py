@@ -2,8 +2,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
-    from .cliente import Cliente
-    from .empleado import Empleado
+    from app.features.clientes.models.cliente import Cliente
+    from app.features.empleados.models.empleado import Empleado
 
 from sqlalchemy import String, BigInteger
 from sqlalchemy.orm import Mapped, mapped_column, relationship

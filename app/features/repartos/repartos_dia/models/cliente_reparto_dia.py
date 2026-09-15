@@ -3,8 +3,8 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from .cliente import Cliente
-    from .repartoDia import RepartoDia
+    from app.features.clientes.models.cliente import Cliente
+    from app.features.repartos.repartos_dia.models.reparto_dia import RepartoDia
 
 from sqlalchemy import Integer, String, Text, Numeric, ForeignKey, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship

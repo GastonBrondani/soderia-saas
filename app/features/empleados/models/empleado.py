@@ -3,10 +3,10 @@ from datetime import date
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .persona import Persona
-    from .recorrido import Recorrido
-    from .usuario import Usuario
-    from .empresa import Empresa
+    from app.features.personas.models.persona import Persona
+    from app.features.repartos.recorridos.models.recorrido import Recorrido
+    from app.features.usuarios.models.usuario import Usuario
+    from app.features.empresas.models.empresa import Empresa
 
 from sqlalchemy import Integer, BigInteger, Date,ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
