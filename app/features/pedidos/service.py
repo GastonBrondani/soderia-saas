@@ -32,6 +32,7 @@ from app.features.inventario.movimientos.schemas.enums_stock import TipoMovimien
 from app.features.repartos.repartos_dia.services.cliente_reparto_dia import ClienteRepartoDiaService
 from app.features.pagos.services.pago import PagoService
 from app.features.pagos.services.idempotency import buscar_por_idempotency_key
+from app.features.pagos.schemas import TipoPago
 from app.features.catalogo.combos.models.combo_producto import ComboProducto
 
 #Generamos un historico en el pedido.
@@ -343,7 +344,7 @@ class PedidoService:
                     id_medio_pago=ped.id_medio_pago,
                     fecha=now,
                     monto=abonado,
-                    tipo_pago="COBRO_PEDIDO",
+                    tipo_pago=TipoPago.COBRO_PEDIDO,
                     observacion=ped.observacion,
                     legajo=ped.legajo,
                     id_cuenta=id_cuenta,
@@ -666,7 +667,7 @@ class PedidoService:
                 id_medio_pago=data.id_medio_pago,
                 fecha=datetime.now(),
                 monto=monto,
-                tipo_pago="PAGO_DEUDA",
+                tipo_pago=TipoPago.PAGO_DEUDA,
                 observacion=data.observacion or "Pago de cuenta sin pedido",
                 legajo=data.legajo,
                 id_repartodia=data.id_repartodia,

@@ -209,22 +209,54 @@ def test_token_de_un_tenant_no_sirve_en_otro(crear_tenant_prueba):
 
 def test_pago_offline_con_misma_idempotency_key_no_se_duplica(crear_tenant_prueba):
     """El mismo payload de sync offline mandado dos veces (reintento tras
-    timeout, doble tap, lo que sea) no tiene que crear dos pagos."""
+    timeout, doble tap, lo que sea) no tiene que crear dos pagos.
+
+    tipo_pago=PAGO_DEUDA (el unico valor de este tipo que un cliente puede
+    mandar junto con COBRO_PEDIDO desde que tipo_pago es un Literal) exige
+    legajo -- por eso el fixture de cliente/cuenta antes de pegarle al
+    endpoint.
+    """
     from fastapi.testclient import TestClient
 
     from app.main import app
 
-    codigo, _, password = crear_tenant_prueba(_codigo_unico("idem"))
+    codigo, dsn, password = crear_tenant_prueba(_codigo_unico("idem"))
+
+    engine = create_engine(dsn)
+    try:
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    "INSERT INTO persona (dni, nombre, apellido) "
+                    "VALUES (30999777, 'Prueba', 'Idem')"
+                )
+            )
+            conn.execute(
+                text(
+                    "INSERT INTO cliente (legajo, id_empresa, dni) "
+                    "VALUES (999777, 1, 30999777)"
+                )
+            )
+            conn.execute(
+                text(
+                    "INSERT INTO cliente_cuenta (id_cuenta, legajo, saldo, deuda) "
+                    "VALUES (999777, 999777, 0, 500)"
+                )
+            )
+    finally:
+        engine.dispose()
 
     with TestClient(app) as client:
         token = _login(client, codigo, password)
         headers = {"X-Tenant": codigo, "Authorization": f"Bearer {token}"}
 
         payload = {
+            "legajo": 999777,
+            "id_cuenta": 999777,
             "id_medio_pago": 1,
             "fecha": "2026-09-15T10:00:00",
             "monto": 100.0,
-            "tipo_pago": "INGRESO_EMPRESA",
+            "tipo_pago": "PAGO_DEUDA",
             "idempotency_key": str(uuid.uuid4()),
             "client_uuid": str(uuid.uuid4()),
         }

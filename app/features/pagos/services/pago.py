@@ -16,7 +16,7 @@ from app.features.maestros.models.medio_pago import MedioPago
 from app.features.clientes.models.cliente_cuenta import ClienteCuenta
 from app.features.repartos.repartos_dia.models.reparto_dia import RepartoDia
 from app.features.caja.models.caja_empresa import CajaEmpresa
-from app.features.pagos.schemas import PagoLibreIn, PagoLibreOut
+from app.features.pagos.schemas import PagoLibreIn, PagoLibreOut, TipoPago
 from app.features.documentos.services.comprobante_pago import ComprobantePagoService
 from app.features.auditoria.service import registrar_evento_cliente
 from app.features.auditoria.schemas.enums_historico import TipoEventoCodigoEnum
@@ -126,7 +126,7 @@ class PagoService:
                     raise AppError("id_medio_pago inexistente.")
                 bucket = _bucket_medio_pago(mp.nombre)
 
-                if legajo is None and tipo_pago in {"COBRO_PEDIDO", "PAGO_DEUDA"}:
+                if legajo is None and tipo_pago in {TipoPago.COBRO_PEDIDO, TipoPago.PAGO_DEUDA}:
                     raise AppError("Falta legajo para pago de cliente.")
 
                 # --- cuenta (si aplica) ---
@@ -192,7 +192,7 @@ class PagoService:
                 db.flush()
 
                 # --- caja empresa ---
-                es_egreso = tipo_pago in {"EGRESO_EMPRESA"}
+                es_egreso = tipo_pago == TipoPago.EGRESO_EMPRESA
                 id_tipo_mov = id_tipo_mov_egreso if es_egreso else id_tipo_mov_ingreso
                 tipo = "egreso" if es_egreso else "ingreso"
 
@@ -216,14 +216,14 @@ class PagoService:
                 if (
                     cuenta is not None
                     and impactar_cuenta
-                    and tipo_pago in {"COBRO_PEDIDO", "PAGO_DEUDA"}
+                    and tipo_pago in {TipoPago.COBRO_PEDIDO, TipoPago.PAGO_DEUDA}
                 ):
                     _aplicar_pago_a_cuenta(cuenta, monto)
 
                 if (
                     rep is not None
                     and impactar_reparto
-                    and tipo_pago in {"COBRO_PEDIDO", "PAGO_DEUDA"}
+                    and tipo_pago in {TipoPago.COBRO_PEDIDO, TipoPago.PAGO_DEUDA}
                 ):
                     _sumar_recaudacion_reparto(rep, bucket, monto)
 
@@ -256,7 +256,7 @@ class PagoService:
             id_medio_pago=data.id_medio_pago,
             fecha=datetime.now(timezone.utc).replace(tzinfo=None),
             monto=data.monto,
-            tipo_pago="PAGO_DEUDA",
+            tipo_pago=TipoPago.PAGO_DEUDA,
             observacion=data.observacion,
             legajo=data.legajo,
             id_cuenta=data.id_cuenta,

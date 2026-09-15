@@ -8,6 +8,7 @@ from app.features.clientes.models.cliente_cuenta import ClienteCuenta
 from app.features.catalogo.servicios.models.cliente_servicio import ClienteServicio
 from app.features.catalogo.servicios.models.cliente_servicio_periodo import ClienteServicioPeriodo
 from app.features.pagos.services.pago import PagoService
+from app.features.pagos.schemas import TipoPago
 from app.features.auditoria.service import registrar_evento_cliente
 from app.features.auditoria.schemas.enums_historico import TipoEventoCodigoEnum
 
@@ -290,7 +291,7 @@ def pagar_periodo_servicio(
             id_medio_pago=id_medio_pago,
             fecha=datetime.now(),
             monto=monto,
-            tipo_pago="SERVICIO",
+            tipo_pago=TipoPago.SERVICIO,
             observacion=observacion
             or f"Pago alquiler dispenser {per.periodo.strftime('%Y-%m')}",
             legajo=legajo,

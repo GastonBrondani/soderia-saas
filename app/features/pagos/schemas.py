@@ -3,9 +3,35 @@ from __future__ import annotations
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
+
+
+class TipoPago(str, Enum):
+    """Todo lo que PagoService.crear() sabe interpretar para impactar
+    cuenta/reparto/caja. Los 5 valores son los que realmente existen hoy en
+    la tabla `pago` (auditado 2026-09-15 via grep de literales en el
+    codigo) -- si aparece algo mas en datos historicos de produccion que
+    no pasó por este código, hay que agregarlo aca antes de deployar, o
+    la serializacion de PagoOut revienta con 500 al leer esa fila.
+    """
+
+    COBRO_PEDIDO = "COBRO_PEDIDO"
+    PAGO_DEUDA = "PAGO_DEUDA"
+    INGRESO_EMPRESA = "INGRESO_EMPRESA"
+    EGRESO_EMPRESA = "EGRESO_EMPRESA"
+    SERVICIO = "SERVICIO"
+
+
+# Los unicos dos valores que un cliente puede elegir mandando POST /pagos
+# (sync offline incluido). INGRESO_EMPRESA/EGRESO_EMPRESA los ponen sus
+# propios endpoints (/pagos/ingreso, /pagos/egreso) como literal de
+# Python, no via este schema; SERVICIO lo pone
+# catalogo/servicios/service.py, tampoco via este schema. Un valor que no
+# sea ninguno de estos dos (ej. "cobro_reparto", el bug que motivo esto)
+# ahora da 422 en vez de crear un pago que no impacta nada.
+TipoPagoCliente = Literal["COBRO_PEDIDO", "PAGO_DEUDA"]
 
 
 class PagoCreate(BaseModel):
@@ -19,7 +45,7 @@ class PagoCreate(BaseModel):
     fecha: datetime
     monto: Decimal = Field(gt=0)
 
-    tipo_pago: str
+    tipo_pago: TipoPagoCliente
     observacion: Optional[str] = None
 
     legajo: Optional[int] = None
@@ -38,7 +64,7 @@ class PagoOut(BaseModel):
     id_medio_pago: int
     fecha: datetime
     monto: Decimal
-    tipo_pago: str
+    tipo_pago: TipoPago
     observacion: Optional[str]
 
     legajo: Optional[int]

@@ -16,6 +16,7 @@ from app.features.pagos.schemas import (
     PagoOut,
     PagoEgresoCreate,
     PagoIngresoCreate,
+    TipoPago,
 )
 from app.features.pagos.services.pago import PagoService
 from app.features.documentos.services.comprobante_pago import ComprobantePagoService as ComprobantePagoServiceExtended
@@ -79,7 +80,7 @@ def crear_ingreso(
         id_medio_pago=payload.id_medio_pago,
         fecha=payload.fecha or datetime.now(timezone.utc).replace(tzinfo=None),
         monto=payload.monto,
-        tipo_pago="INGRESO_EMPRESA",
+        tipo_pago=TipoPago.INGRESO_EMPRESA,
         observacion=observacion,
         impactar_cuenta=False,
         impactar_reparto=False,
@@ -107,7 +108,7 @@ def crear_egreso(
         id_medio_pago=payload.id_medio_pago,
         fecha=payload.fecha or datetime.now(timezone.utc).replace(tzinfo=None),
         monto=payload.monto,
-        tipo_pago="EGRESO_EMPRESA",
+        tipo_pago=TipoPago.EGRESO_EMPRESA,
         observacion=observacion,
         impactar_cuenta=False,
         impactar_reparto=False,

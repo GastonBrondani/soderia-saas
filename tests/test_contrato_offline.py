@@ -13,12 +13,17 @@ Si cambian del lado del front, este archivo es el que hay que actualizar
 -- y viceversa: es el contrato escrito entre los dos repos, no una
 aproximacion.
 
-Limite a tener en cuenta: esto valida FORMA (que campos exigen los
-schemas), no REGLAS DE NEGOCIO. `tipo_pago` es un `str` libre del lado del
-backend -- un valor como "cobro_reparto" que no matchea ningun tipo que
-PagoService.crear reconoce (COBRO_PEDIDO, PAGO_DEUDA, EGRESO_EMPRESA) pasa
-esta validacion igual, porque el schema no tiene enum. Ese bug especifico
-solo lo detecta un test de integracion contra PagoService.crear.
+Actualizado 2026-09-15 (segunda revisión): `tipo_pago` dejó de ser un `str`
+libre. `PagoCreate.tipo_pago` ahora es `Literal["COBRO_PEDIDO",
+"PAGO_DEUDA"]` -- los dos únicos valores que un cliente puede elegir. La
+decisión con el equipo de Flutter fue `PAGO_DEUDA` (un cobro sin pedido
+asociado, la forma de este payload -- ver `TipoPago`/`TipoPagoCliente` en
+`app/features/pagos/schemas.py` para el razonamiento completo). El valor
+viejo que mandaba la tablet, `"cobro_reparto"`, nunca matcheaba ningún
+tipo que la lógica de negocio reconocía (`COBRO_PEDIDO`, `PAGO_DEUDA`,
+`EGRESO_EMPRESA`): el pago se creaba y aparecía en caja, pero no
+descontaba deuda ni sumaba a la recaudación del reparto. Ahora ese valor
+da 422 en el schema, antes de tocar ninguna lógica de negocio.
 """
 
 from __future__ import annotations
@@ -47,7 +52,7 @@ PAGO_OFFLINE = {
     "id_medio_pago": 1,
     "fecha": "2026-09-15T10:00:00",
     "monto": 100.0,
-    "tipo_pago": "cobro_reparto",
+    "tipo_pago": "PAGO_DEUDA",
     "observacion": None,
 }
 
@@ -114,3 +119,19 @@ def test_pago_create_todavia_exige_id_medio_pago():
     del payload["id_medio_pago"]
     with pytest.raises(ValidationError):
         PagoCreate.model_validate(payload)
+
+
+def test_tipo_pago_viejo_de_la_tablet_ahora_da_422():
+    """Regresion puntual: "cobro_reparto" (el valor que mandaba la tablet
+    antes de la decision de usar PAGO_DEUDA) ya no pasa la validacion.
+    Antes de este fix, este mismo payload daba 200 y creaba un pago que no
+    impactaba ni la cuenta del cliente ni la recaudacion del reparto."""
+    payload = dict(PAGO_OFFLINE, tipo_pago="cobro_reparto")
+    with pytest.raises(ValidationError):
+        PagoCreate.model_validate(payload)
+
+
+def test_tipo_pago_cobro_pedido_tambien_es_valido():
+    """El otro valor que un cliente puede elegir (pago atado a un pedido)."""
+    payload = dict(PAGO_OFFLINE, tipo_pago="COBRO_PEDIDO")
+    PagoCreate.model_validate(payload)

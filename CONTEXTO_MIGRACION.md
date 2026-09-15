@@ -347,18 +347,35 @@ momento puede correr detrás de `get_current_user` (o sea, siempre).
   tenant `demo`: un pago con `id_cuenta` y sin `id_empresa` baja la deuda
   de la cuenta correcta.
 
-  **De paso, un bug real encontrado (no reportado por el front):**
+  ~~De paso, un bug real encontrado (no reportado por el front):
   `pago_repository.dart` manda `tipo_pago: "cobro_reparto"`, que no
   matchea ninguno de los valores que `PagoService.crear` reconoce
   (`COBRO_PEDIDO`, `PAGO_DEUDA`, `EGRESO_EMPRESA`) para impactar la cuenta
   del cliente y la recaudación del reparto. Con ese valor, el pago se
-  crea y aparece en caja, pero **no** descuenta deuda ni suma a la
+  crea y aparece en caja, pero no descuenta deuda ni suma a la
   recaudación del reparto — falla en silencio. `tipo_pago` es texto libre
-  (`str`, sin enum) del lado del backend. Falta decidir con el front: o
-  mandan `COBRO_PEDIDO` (que es lo que ya usa el flujo online equivalente
-  en `pedidos/service.py:345`), o el backend agrega `cobro_reparto` como
-  alias reconocido. Ninguna de las dos se hizo todavía — es una decisión a
-  coordinar, no algo para resolver por iniciativa propia.
+  (`str`, sin enum) del lado del backend.~~ **Decidido y arreglado
+  (2026-09-15, segunda revisión cruzada).** El valor correcto es
+  `PAGO_DEUDA`, no `COBRO_PEDIDO`: el payload de pago offline no lleva
+  `id_pedido` (lleva `legajo` + `id_cuenta` + `id_repartodia`), es la
+  forma de un cobro de cuenta sin pedido asociado — la misma que usa
+  `cancelar_deuda` (`pedidos/service.py:669`), no la de
+  `pedidos/service.py:346` (que sí tiene un pedido detrás). Y no se agregó
+  `cobro_reparto` como alias: eso es lo que originó el bug (dos nombres
+  para lo mismo). En cambio, `tipo_pago` pasó a ser un enum real
+  (`TipoPago` en `app/features/pagos/schemas.py`, con los 5 valores que
+  usa el código: `COBRO_PEDIDO`, `PAGO_DEUDA`, `INGRESO_EMPRESA`,
+  `EGRESO_EMPRESA`, `SERVICIO`); `PagoCreate.tipo_pago` — lo único que un
+  cliente puede mandar — quedó restringido a
+  `Literal["COBRO_PEDIDO", "PAGO_DEUDA"]`, así que un valor inventado da
+  422 en el schema en vez de crear un pago que no impacta nada. Los 4
+  lugares que ya usaban las otras 3 constantes internas
+  (`INGRESO_EMPRESA`/`EGRESO_EMPRESA`/`SERVICIO`) se migraron al enum para
+  que no haya un string literal repetido en ningún lado. **Ojo:** el
+  enum se armó auditando los literales del código actual, no datos reales
+  de producción — si en la tabla `pago` de producción hay algún
+  `tipo_pago` histórico que no sea uno de esos 5, `PagoOut` va a romper
+  con 500 al leer esa fila. Verificalo antes de deployar esto.
 - ~~`empleado.py` tiene `id_empresa=1` hardcodeado en dos lugares.~~
   ~~`pago.py` también: `crear_ingreso` y `crear_egreso` tienen `id_empresa=1`
   hardcodeado.~~ **Arreglado (2026-09-15).** Los tres reemplazados por
