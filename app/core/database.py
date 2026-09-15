@@ -5,14 +5,15 @@ Reemplaza al database.py actual, que tiene un `engine` y un `SessionLocal`
 globales. Con una base por cliente eso deja de servir: hay que resolver a
 que base conectarse en cada request.
 
-La estrategia es un cache LRU de engines. Cada engine tiene su propio pool,
-asi que el limite de entradas del cache importa:
+La estrategia es un cache LRU de engines, **uno por proceso**. Con
+gunicorn --workers 4 (Dockerfile.prod) hay 4 caches independientes, asi que
+el limite real de conexiones es:
 
-    conexiones maximas ~= TENANT_ENGINE_CACHE_SIZE * (POOL_SIZE + MAX_OVERFLOW)
+    GUNICORN_WORKERS * TENANT_ENGINE_CACHE_SIZE * (TENANT_POOL_SIZE + TENANT_MAX_OVERFLOW)
 
-Con los defaults (15 * 10 = 150) y un Postgres con max_connections=100 te
-quedas corto si todos los tenants pegan a la vez. Para mas de ~10 clientes
-activos conviene meter PgBouncer adelante y bajar el pool a 2.
+Con los defaults (4 * 10 * (2+2) = 160) y un Postgres con
+max_connections=100 default, hay que subir max_connections antes de tener
+varios tenants activos a la vez, o meter PgBouncer adelante.
 
 El `Base` declarativo sigue siendo uno solo: el esquema es identico en todas
 las bases, lo que cambia es a cual te conectas.

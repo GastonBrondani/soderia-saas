@@ -519,10 +519,18 @@ en el contrato. Sin autenticación: `POST /auth/login`, `POST /auth/token`,
 
 ## Cosas a tener en la cabeza
 
-- **Conexiones:** cada sodería activa abre su pool.
-  `TENANT_ENGINE_CACHE_SIZE × (POOL_SIZE + MAX_OVERFLOW)`. Con los defaults
-  son 150 contra un Postgres de 100. Pasando ~10 clientes activos hay que
-  meter PgBouncer y bajar el pool a 2.
+- **Conexiones.** El caché de engines de `core/database.py` es **por
+  proceso**, y `Dockerfile.prod` corre `gunicorn --workers 4`: la fórmula
+  real es `GUNICORN_WORKERS × TENANT_ENGINE_CACHE_SIZE × (TENANT_POOL_SIZE +
+  TENANT_MAX_OVERFLOW)`. **Corregido (2026-09-15, revisión cruzada con el
+  front):** con los defaults viejos (15 × (5+5), sin contar workers) daba
+  150 contra un Postgres de 100 — pero el número real, con los 4 workers,
+  era 600. Los defaults de `.env.example`/`config.py` bajaron a
+  `TENANT_ENGINE_CACHE_SIZE=10`, `TENANT_POOL_SIZE=2`,
+  `TENANT_MAX_OVERFLOW=2` → `4 × 10 × 4 = 160`, que **sigue** arriba de
+  `max_connections=100`. O sea: subí `max_connections` en Postgres (a 200+)
+  antes de escalar clientes, o meté PgBouncer. El umbral de "meté
+  PgBouncer" es bastante más bajo de lo que decía esta sección antes.
 - **El control plane es punto único de falla.** Si esa base se cae, no se
   resuelve ningún tenant.
 - **Reportes agregados entre soderías no son posibles directamente.** Es el

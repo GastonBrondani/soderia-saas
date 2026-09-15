@@ -70,13 +70,17 @@ class Settings(BaseSettings):
     # Base "de mantenimiento" a la que conectarse para hacer CREATE DATABASE.
     TENANT_DB_MAINTENANCE_DB: str = "postgres"
 
-    # Cuantos engines mantener vivos en memoria a la vez.
-    # Cada engine abre su propio pool, asi que esto multiplica conexiones:
-    # conexiones maximas ~= TENANT_ENGINE_CACHE_SIZE * TENANT_POOL_SIZE.
-    # Con Postgres default (100 conexiones) no pases de 15 * 5.
-    TENANT_ENGINE_CACHE_SIZE: int = 15
-    TENANT_POOL_SIZE: int = 5
-    TENANT_MAX_OVERFLOW: int = 5
+    # Cuantos engines mantener vivos en memoria a la vez. Este cache es POR
+    # PROCESO: con gunicorn --workers 4 (Dockerfile.prod) hay 4 caches
+    # independientes. Cada engine abre su propio pool, asi que las
+    # conexiones maximas reales son:
+    #   GUNICORN_WORKERS * TENANT_ENGINE_CACHE_SIZE * (TENANT_POOL_SIZE + TENANT_MAX_OVERFLOW)
+    # Con estos defaults y 4 workers: 4 * 10 * (2+2) = 160, todavia arriba
+    # de un Postgres default (max_connections=100). Subi max_connections o
+    # meté PgBouncer antes de sumar mas soderias activas.
+    TENANT_ENGINE_CACHE_SIZE: int = 10
+    TENANT_POOL_SIZE: int = 2
+    TENANT_MAX_OVERFLOW: int = 2
     TENANT_POOL_RECYCLE: int = 1800
 
     # Cuantos segundos cachear la ficha de un tenant antes de releerla
