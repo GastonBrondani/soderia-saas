@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends
 from app.core.exceptions import AppError
 from sqlalchemy.orm import Session
@@ -74,7 +74,7 @@ def crear_ingreso(
         db,
         id_empresa=EmpresaService.get_id_empresa_actual(db),
         id_medio_pago=payload.id_medio_pago,
-        fecha=payload.fecha or datetime.utcnow(),
+        fecha=payload.fecha or datetime.now(timezone.utc).replace(tzinfo=None),
         monto=payload.monto,
         tipo_pago="INGRESO_EMPRESA",
         observacion=observacion,
@@ -102,7 +102,7 @@ def crear_egreso(
         db,
         id_empresa=EmpresaService.get_id_empresa_actual(db),
         id_medio_pago=payload.id_medio_pago,
-        fecha=payload.fecha or datetime.utcnow(),
+        fecha=payload.fecha or datetime.now(timezone.utc).replace(tzinfo=None),
         monto=payload.monto,
         tipo_pago="EGRESO_EMPRESA",
         observacion=observacion,

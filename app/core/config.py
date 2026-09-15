@@ -18,6 +18,7 @@ from typing import Annotated, Literal
 
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+from sqlalchemy.engine import URL
 
 # NoDecode le dice a pydantic-settings que NO intente parsear el valor del
 # .env como JSON. Sin esto, un `CORS_ORIGINS=http://a,http://b` revienta con
@@ -214,12 +215,21 @@ class Settings(BaseSettings):
         return f"{self.TENANT_DB_NAME_PREFIX}{codigo}"
 
     def tenant_dsn(self, db_name: str) -> str:
-        """DSN completo apuntando a la base de un tenant."""
-        return (
-            f"{self.TENANT_DB_DRIVER}://{self.TENANT_DB_USER}:"
-            f"{self.TENANT_DB_PASSWORD}@{self.TENANT_DB_HOST}:"
-            f"{self.TENANT_DB_PORT}/{db_name}"
-        )
+        """DSN completo apuntando a la base de un tenant.
+
+        Con URL.create en vez de armar el string a mano: un usuario o
+        contraseña con `@`, `:`, `/` o `#` (Postgres no los prohibe) rompia
+        el DSN de forma confusa. render_as_string(hide_password=False)
+        porque str(URL) enmascara la contraseña con "***".
+        """
+        return URL.create(
+            self.TENANT_DB_DRIVER,
+            username=self.TENANT_DB_USER,
+            password=self.TENANT_DB_PASSWORD,
+            host=self.TENANT_DB_HOST,
+            port=self.TENANT_DB_PORT,
+            database=db_name,
+        ).render_as_string(hide_password=False)
 
     def maintenance_dsn(self) -> str:
         """DSN a la base de mantenimiento, para CREATE/DROP DATABASE."""

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
 
 from sqlalchemy import select
@@ -245,7 +245,7 @@ class PagoService:
             db,
             id_empresa=EmpresaService.get_id_empresa_actual(db),
             id_medio_pago=data.id_medio_pago,
-            fecha=datetime.utcnow(),
+            fecha=datetime.now(timezone.utc).replace(tzinfo=None),
             monto=data.monto,
             tipo_pago="PAGO_DEUDA",
             observacion=data.observacion,

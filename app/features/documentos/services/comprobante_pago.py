@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 
 from sqlalchemy import select
@@ -84,7 +84,7 @@ class ComprobantePagoService:
             nombre_archivo=filename,
             tipo_archivo="COMPROBANTE_PAGO",
             url_archivo=url_archivo,
-            fecha_carga=datetime.utcnow(),
+            fecha_carga=datetime.now(timezone.utc).replace(tzinfo=None),
             observacion=f"Comprobante de pago #{id_pago}",
         )
 
