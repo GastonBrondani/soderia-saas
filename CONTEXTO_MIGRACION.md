@@ -537,6 +537,12 @@ en el contrato. Sin autenticación: `POST /auth/login`, `POST /auth/token`,
   costo del modelo elegido.
 - **Sincronización offline:** cualquier cambio en `features/sincronizacion/`
   o en la idempotencia de pagos rompe tablets en la calle. Máximo cuidado.
+- ~~`PLATFORM_ADMIN_TOKEN`, `require_platform_admin()` y el path exento
+  `/admin` existían sin ningún router de administración detrás — config
+  que prometía una API que nunca se escribió.~~ **Borrado (2026-09-15).**
+  Si el día de mañana hace falta una API de alta/baja de soderías (hoy es
+  `scripts/crear_tenant.py` a mano), se vuelve a agregar junto con los
+  endpoints reales, no antes.
 
 ---
 

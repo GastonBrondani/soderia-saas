@@ -21,13 +21,11 @@ Uso en un endpoint puntual:
 
 from __future__ import annotations
 
-import hmac
 from typing import Callable
 
-from fastapi import Depends, Header
+from fastapi import Depends
 
-from app.core.config import settings
-from app.core.exceptions import Forbidden, Unauthorized
+from app.core.exceptions import Forbidden
 from app.core.security import CurrentUser, get_current_user
 
 
@@ -63,27 +61,3 @@ def require_admin(
     user: CurrentUser = Depends(require_roles("ADMIN")),
 ) -> CurrentUser:
     return user
-
-
-# ----------------------------------------------------------------------
-# Administracion de la plataforma
-# ----------------------------------------------------------------------
-
-
-def require_platform_admin(
-    x_platform_token: str | None = Header(default=None, alias="X-Platform-Token"),
-) -> None:
-    """Protege los endpoints de alta y baja de soderias.
-
-    No usa el sistema de usuarios: esos viven dentro de la base de cada
-    sodería, y quien administra la plataforma esta por encima de todas.
-    Es un token estatico en el .env, comparado en tiempo constante.
-
-    Para un SaaS chico alcanza. Cuando tengas un panel de administracion
-    de verdad, reemplazalo por usuarios propios en el control plane.
-    """
-    esperado = settings.PLATFORM_ADMIN_TOKEN
-    if not esperado:
-        raise Forbidden("La administracion de plataforma esta deshabilitada.")
-    if not x_platform_token or not hmac.compare_digest(x_platform_token, esperado):
-        raise Unauthorized("Token de plataforma invalido.")

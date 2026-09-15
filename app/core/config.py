@@ -102,14 +102,13 @@ class Settings(BaseSettings):
     # con esto puesto, la app te deja entrar sin subdominio ni header.
     DEFAULT_TENANT: str | None = None
 
-    # Rutas que no necesitan tenant resuelto (health checks, docs, admin).
+    # Rutas que no necesitan tenant resuelto (health checks, docs).
     TENANT_EXEMPT_PATHS: ListaDeTexto = [
         "/health",
         "/health/ready",
         "/docs",
         "/redoc",
         "/openapi.json",
-        "/admin",
     ]
 
     # ------------------------------------------------------------------
@@ -118,10 +117,6 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 12
-
-    # Clave separada para el panel de administracion de la plataforma
-    # (el que usas vos para dar de alta soderias). No compartir con la de tenants.
-    PLATFORM_ADMIN_TOKEN: str | None = None
 
     # ------------------------------------------------------------------
     # CORS
