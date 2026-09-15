@@ -1,6 +1,4 @@
-from typing import Optional
-
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -19,7 +17,6 @@ router = APIRouter(
 # sus items, productos, combos y medios de pago).
 @router.get("/bootstrap", response_model=CatalogoBootstrapOut)
 def bootstrap_catalogo(
-    id_empresa: Optional[int] = Query(None, description="Empresa (opcional, filtra combos)"),
     db: Session = Depends(get_db),
 ):
-    return catalogo_bootstrap(db, id_empresa=id_empresa)
+    return catalogo_bootstrap(db)

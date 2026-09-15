@@ -282,7 +282,6 @@
     "parametros": [
       "fecha_desde:query:req",
       "fecha_hasta:query:req",
-      "id_empresa:query:opt",
       "limit:query:opt",
       "offset:query:opt"
     ],
@@ -308,20 +307,12 @@
   },
   "GET /caja-empresa/total": {
     "body": null,
-    "parametros": [
-      "id_empresa:query:opt"
-    ],
+    "parametros": [],
     "protegido": true,
     "respuestas": {
       "200": {
         "campos": [
           "total!"
-        ],
-        "tipo": "objeto"
-      },
-      "422": {
-        "campos": [
-          "detail"
         ],
         "tipo": "objeto"
       }
@@ -333,8 +324,7 @@
   "GET /caja-empresa/total-por-fecha": {
     "body": null,
     "parametros": [
-      "fecha:query:req",
-      "id_empresa:query:opt"
+      "fecha:query:req"
     ],
     "protegido": true,
     "respuestas": {
@@ -359,8 +349,7 @@
     "body": null,
     "parametros": [
       "fecha_desde:query:req",
-      "fecha_hasta:query:req",
-      "id_empresa:query:opt"
+      "fecha_hasta:query:req"
     ],
     "protegido": true,
     "respuestas": {
@@ -438,9 +427,7 @@
   },
   "GET /catalogo/bootstrap": {
     "body": null,
-    "parametros": [
-      "id_empresa:query:opt"
-    ],
+    "parametros": [],
     "protegido": true,
     "respuestas": {
       "200": {
@@ -449,12 +436,6 @@
           "listas_precios!",
           "medios_pago!",
           "productos!"
-        ],
-        "tipo": "objeto"
-      },
-      "422": {
-        "campos": [
-          "detail"
         ],
         "tipo": "objeto"
       }
@@ -1638,8 +1619,7 @@
   "GET /repartos-dia/bootstrap": {
     "body": null,
     "parametros": [
-      "fecha:query:req",
-      "id_empresa:query:opt"
+      "fecha:query:req"
     ],
     "protegido": true,
     "respuestas": {
@@ -1667,7 +1647,6 @@
     "body": null,
     "parametros": [
       "fecha:query:req",
-      "id_empresa:query:opt",
       "id_usuario:query:opt"
     ],
     "protegido": true,
@@ -1701,7 +1680,6 @@
     "parametros": [
       "fecha_desde:query:req",
       "fecha_hasta:query:req",
-      "id_empresa:query:opt",
       "id_usuario:query:opt"
     ],
     "protegido": true,
@@ -1808,7 +1786,6 @@
   "GET /stock/": {
     "body": null,
     "parametros": [
-      "id_empresa:query:opt",
       "id_producto:query:opt",
       "limit:query:opt",
       "offset:query:opt"
@@ -1840,9 +1817,7 @@
   },
   "GET /stock/detalle": {
     "body": null,
-    "parametros": [
-      "id_empresa:query:req"
-    ],
+    "parametros": [],
     "protegido": true,
     "respuestas": {
       "200": {
@@ -1857,12 +1832,6 @@
           "tipo": "objeto"
         },
         "tipo": "array"
-      },
-      "422": {
-        "campos": [
-          "detail"
-        ],
-        "tipo": "objeto"
       }
     },
     "tags": [
@@ -4044,7 +4013,6 @@
     "body": null,
     "parametros": [
       "cantidad:query:req",
-      "id_empresa:query:req",
       "id_producto:query:req"
     ],
     "protegido": true,

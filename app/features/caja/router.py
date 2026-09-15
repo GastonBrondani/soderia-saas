@@ -33,27 +33,20 @@ def generar_cierre_diario(
 #Get total de la caja empresa
 @router.get("/total", response_model=CajaEmpresaTotalOut)
 def get_total_caja(
-    id_empresa: int | None = Query(
-        None, description="Opcional: filtrar por empresa"
-    ),
     db: Session = Depends(get_db),
 ):
-    total = CajaEmpresaService.total_general(db, id_empresa=id_empresa)
+    total = CajaEmpresaService.total_general(db)
     return CajaEmpresaTotalOut(total=total)
 
 #Get total de la caja empresa por fecha
 @router.get("/total-por-fecha", response_model=CajaEmpresaTotalOut)
 def get_total_caja_por_fecha(
     fecha: date = Query(..., description="Fecha a consultar"),
-    id_empresa: int | None = Query(
-        None, description="Opcional: filtrar por empresa"
-    ),
     db: Session = Depends(get_db),
 ):
     total = CajaEmpresaService.total_por_fecha(
         db,
         fecha=fecha,
-        id_empresa=id_empresa,
     )
     return CajaEmpresaTotalOut(total=total)
 
@@ -62,16 +55,12 @@ def get_total_caja_por_fecha(
 def get_total_caja_por_rango(
     fecha_desde: date = Query(..., description="Desde (inclusive)"),
     fecha_hasta: date = Query(..., description="Hasta (inclusive)"),
-    id_empresa: int | None = Query(
-        None, description="Opcional: filtrar por empresa"
-    ),
     db: Session = Depends(get_db),
 ):
     total = CajaEmpresaService.total_por_rango(
         db,
         fecha_desde=fecha_desde,
         fecha_hasta=fecha_hasta,
-        id_empresa=id_empresa,
     )
     return CajaEmpresaTotalOut(total=total)
 
@@ -79,7 +68,6 @@ def get_total_caja_por_rango(
 def listar_movimientos(
     fecha_desde: date = Query(..., description="Desde (inclusive)"),
     fecha_hasta: date = Query(..., description="Hasta (inclusive)"),
-    id_empresa: int | None = Query(None, description="Opcional: filtrar por empresa"),
     limit: int = Query(200, ge=1, le=1000),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
@@ -88,7 +76,6 @@ def listar_movimientos(
         db,
         fecha_desde=fecha_desde,
         fecha_hasta=fecha_hasta,
-        id_empresa=id_empresa,
         limit=limit,
         offset=offset,
     )

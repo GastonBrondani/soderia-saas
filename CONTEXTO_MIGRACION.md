@@ -252,10 +252,19 @@ con movimientos de archivos.
 
 **Rompen el contrato de la API** (coordinar con Flutter antes):
 
-- `id_empresa: Optional[int] = Query(None)` repartido por `repartoDia.py`,
-  `cajaEmpresa.py` y otros. Con una base por sodería ya no es la frontera de
-  seguridad, pero sigue viniendo del cliente. Donde tenga sentido (sucursal),
-  que salga del usuario autenticado.
+- ~~`id_empresa: Optional[int]/int = Query(...)` en `caja/router.py` (4
+  endpoints), `catalogo/router.py` (bootstrap), `inventario/stock/router.py`
+  (3 endpoints) y `repartos_dia/routers/reparto_dia.py` (3 endpoints).~~
+  **Arreglado (2026-09-15).** Frontend confirmó que no existe (ni está
+  planeado) el concepto de sucursal — cada sodería tiene una sola empresa.
+  Se sacó el query param de los GET/PUT y se agregó
+  `EmpresaService.get_id_empresa_actual(db)`
+  (`app/features/empresas/service.py`) que la infiere de la base del tenant
+  actual. El `POST /repartos-dia/` que recibe `id_empresa` en el body
+  **no se tocó** (no estaba en el pedido de Flutter). Contrato regenerado
+  (`python scripts/snapshot_openapi.py --salida tests/snapshots/openapi_baseline.json`);
+  el único cambio visible para el cliente es que esos parámetros ya no
+  existen (si los sigue mandando, FastAPI los ignora por no estar declarados).
 - `empleado.py` tiene `id_empresa=1` hardcodeado en dos lugares.
 - `pago.py` también: `crear_ingreso` y `crear_egreso` tienen
   `id_empresa=1` hardcodeado. Encontrado en el paso 3 al limpiar código
