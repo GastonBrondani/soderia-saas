@@ -631,6 +631,36 @@ en el contrato. Sin autenticación: `POST /auth/login`, `POST /auth/token`,
   encontraron los 3 bugs de pérdida silenciosa de datos: si corrían solo
   en la máquina de quien los escribió, el hallazgo no se protegía a
   futuro.
+- **Topología de dominios (2026-09-15, segunda revisión cruzada): decidida
+  la opción A** — cada sodería en `<codigo>.tuapp.com`, mismo host sirve
+  el bundle Flutter y proxea `/api/*` al backend, tenant resuelto por
+  `Host` sin que el cliente mande nada. El nginx y el cliente los
+  implementa el front; de este lado se auditó lo que hacía falta y **no
+  requirió cambios de código**, solo confirmar:
+  - `_codigo_desde_subdominio()` ya lee `request.headers.get("host", "")`
+    — el header `Host` tal cual llega a uvicorn/gunicorn. Funciona bien
+    **si** nginx manda `proxy_set_header Host $host;` (el host original,
+    no el del upstream). Si nginx no lo setea explícitamente, reescribe el
+    `Host` al del upstream y el tenant deja de resolver — es una línea del
+    `nginx.conf` del front, no algo para arreglar acá.
+  - Ninguna ruta del backend tiene el prefijo `/api` hardcodeado (`/pagos`,
+    `/pedidos`, `/catalogo`, etc., todos sin prefijo). Recomendado:
+    strippear `/api` en nginx (`location /api/ { proxy_pass
+    http://backend/; }`, con la barra final) para no tener que tocar
+    `TENANT_EXEMPT_PATHS` ni ningún router.
+  - `DEFAULT_TENANT` y `CORS_ORIGINS`/`CORS_ORIGIN_REGEX` ya validan
+    correctamente en `ENV=prod` (`config.py::_validar_coherencia`): no se
+    tocó nada. Con mismo origen, CORS deja de ejercer pero la validación
+    sigue pidiendo que se declare uno de los dos — no se relajó a
+    propósito (sigue siendo una red de seguridad legítima si algún día hay
+    un origen distinto, ej. un panel de admin aparte). Falta setear los
+    valores reales (`BASE_DOMAIN=tuapp.com`,
+    `CORS_ORIGIN_REGEX=https://.*\.tuapp\.com`) en el `.env` de producción
+    real — eso es un valor de infraestructura, no algo que este repo
+    pueda decidir.
+  - `TENANT_RESOLUTION=both` (default) ya deja el header `X-Tenant` como
+    fallback funcionando; no se tocó, sigue sirviendo para `curl`/scripts
+    de mantenimiento.
 - **Convención de transacciones (2026-09-15, segunda revisión cruzada):
   los routers commitean, los services nunca.** Ningún service hace
   `db.begin()`/`with db.begin():` ni decide si commitear mirando
