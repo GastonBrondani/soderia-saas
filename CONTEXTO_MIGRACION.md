@@ -435,6 +435,27 @@ en el contrato. Sin autenticación: `POST /auth/login`, `POST /auth/token`,
   eran bloques `"""..."""`, invisibles para FastAPI), así que no cambia
   comportamiento.
 
+**Producción / infraestructura** (revisión cruzada con el front, 2026-09-15):
+
+- ~~`backend-prod` de `docker-compose.yml` no montaba ningún volumen:
+  `STORAGE_LOCAL_PATH=/data` vivía en el filesystem del contenedor y
+  desaparecía en cada recreate/deploy, junto con todo lo que escribe
+  `core/storage.py` (incluido el destino de
+  `scripts/migrar_urls_comprobantes.py`).~~ **Arreglado (2026-09-15).**
+  Volumen nombrado `data:/data` en `backend-prod` y en `backend` (dev, para
+  reproducir el mismo comportamiento). Además `docker-compose.yml` pedía
+  `POSTGRES_DB`/`POSTGRES_USER`/`POSTGRES_PASSWORD`, variables que
+  `.env.example` ya no define (las reemplazó `TENANT_DB_*`): un
+  `docker compose up` con un `.env` nuevo levantaba un Postgres sin
+  contraseña configurada. El servicio `db` ahora deriva esas tres de
+  `TENANT_DB_USER`/`TENANT_DB_PASSWORD`/`TENANT_DB_MAINTENANCE_DB` (falla
+  fuerte si `TENANT_DB_PASSWORD` no está seteada, en vez de arrancar mal
+  configurado). Queda anotado en `.env.example` que `TENANT_DB_HOST` y
+  `CONTROL_PLANE_DATABASE_URL` tienen que apuntar al nombre del servicio
+  (`db`), no a `localhost`, cuando se corre vía `docker compose up` — no se
+  fuerza ese valor porque no se sabe si la topología real de producción usa
+  este `db` de compose o un Postgres administrado aparte.
+
 ---
 
 ## Reglas duras

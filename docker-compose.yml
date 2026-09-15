@@ -8,9 +8,13 @@ services:
     env_file:
       - .env
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # Mismas credenciales que usa la app para conectarse (TENANT_DB_*):
+      # todas las bases (control plane + soderías) viven en esta instancia.
+      # POSTGRES_DB solo importa para el arranque del contenedor: las bases
+      # reales las crea la app (CREATE DATABASE) contra TENANT_DB_MAINTENANCE_DB.
+      POSTGRES_DB: ${TENANT_DB_MAINTENANCE_DB:-postgres}
+      POSTGRES_USER: ${TENANT_DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${TENANT_DB_PASSWORD:?falta TENANT_DB_PASSWORD en .env}
       TZ: America/Argentina/Buenos_Aires
       PGTZ: America/Argentina/Buenos_Aires
     ports:
@@ -40,6 +44,7 @@ services:
         condition: service_healthy
     volumes:
       - .:/app   # montaje en caliente
+      - data:/data   # comprobantes/documentos, igual que en prod
     profiles: ["dev"]
 
   # Servicio de backend para producción
@@ -55,8 +60,13 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    # sin volumes en prod
+    volumes:
+      # STORAGE_LOCAL_PATH=/data: comprobantes y documentos de todas las
+      # soderías. Sin este volumen se pierden en cada recreate/deploy del
+      # contenedor. Entra en la política de backup igual que pgdata.
+      - data:/data
     profiles: ["prod"]
 
 volumes:
   pgdata:
+  data:
