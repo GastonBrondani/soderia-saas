@@ -9,7 +9,12 @@ from pydantic import BaseModel, Field
 
 
 class PagoCreate(BaseModel):
-    id_empresa: int
+    # El servidor infiere la empresa del tenant actual (ver
+    # EmpresaService.get_id_empresa_actual). Si el cliente lo manda, se
+    # ignora: no es la frontera de seguridad desde que hay una base por
+    # sodería, y confiar en el valor del cliente es el agujero que la
+    # migración vino a cerrar.
+    id_empresa: Optional[int] = None
     id_medio_pago: int
     fecha: datetime
     monto: Decimal = Field(gt=0)
@@ -18,6 +23,7 @@ class PagoCreate(BaseModel):
     observacion: Optional[str] = None
 
     legajo: Optional[int] = None
+    id_cuenta: Optional[int] = None
     id_pedido: Optional[int] = None
     id_repartodia: Optional[int] = None
 
@@ -48,7 +54,7 @@ class PagoOut(BaseModel):
 class PagoLibreIn(BaseModel):
     legajo: int
     id_cuenta: int
-    id_empresa: int
+    id_empresa: Optional[int] = None
     id_medio_pago: int
     monto: Decimal = Field(gt=0)
     observacion: Optional[str] = None

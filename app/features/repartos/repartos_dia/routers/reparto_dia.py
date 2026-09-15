@@ -5,6 +5,7 @@ from typing import List, Optional
 from datetime import date
 
 from app.core.database import get_db
+from app.features.empresas.service import EmpresaService
 from app.features.repartos.repartos_dia.schemas.reparto_dia import (
     RepartoDiaCreate, RepartoDiaOut
 )
@@ -31,7 +32,7 @@ def crear_reparto_dia(payload: RepartoDiaCreate, db: Session = Depends(get_db)):
     return RepartoDiaService.create(
         db,
         id_usuario=payload.id_usuario,
-        id_empresa=payload.id_empresa,
+        id_empresa=EmpresaService.get_id_empresa_actual(db),
         fecha=payload.fecha,
         observacion=payload.observacion,
     )

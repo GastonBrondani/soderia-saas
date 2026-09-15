@@ -20,6 +20,7 @@ from app.features.pagos.schemas import PagoLibreIn, PagoLibreOut
 from app.features.documentos.services.comprobante_pago import ComprobantePagoService
 from app.features.auditoria.service import registrar_evento_cliente
 from app.features.auditoria.schemas.enums_historico import TipoEventoCodigoEnum
+from app.features.empresas.service import EmpresaService
 
 TWOPLACES = Decimal("0.01")
 
@@ -242,7 +243,7 @@ class PagoService:
         # 1️⃣ Crear el pago
         pago = PagoService.crear(
             db,
-            id_empresa=data.id_empresa,
+            id_empresa=EmpresaService.get_id_empresa_actual(db),
             id_medio_pago=data.id_medio_pago,
             fecha=datetime.utcnow(),
             monto=data.monto,

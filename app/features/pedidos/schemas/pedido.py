@@ -35,7 +35,10 @@ class PedidoBase(BaseModel):
 
     legajo: int
     id_medio_pago: int
-    id_empresa: int = 1
+    # El servidor infiere la empresa del tenant actual (ver
+    # EmpresaService.get_id_empresa_actual). Si el cliente lo manda, se
+    # ignora.
+    id_empresa: Optional[int] = None
     fecha: datetime = Field(default_factory=datetime.now)
     monto_total: Decimal
     monto_abonado: Decimal = Decimal("0.00")
@@ -58,7 +61,6 @@ class PedidoBase(BaseModel):
 class PedidoCreate(PedidoBase):
     legajo: int  # obligatorio
     id_medio_pago: int  # obligatorio
-    id_empresa: int  # obligatorio
     fecha: datetime  # obligatorio
     monto_total: Decimal  # obligatorio
 

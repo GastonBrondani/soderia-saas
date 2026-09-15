@@ -259,11 +259,49 @@ con movimientos de archivos.
   Se sacó el query param de los GET/PUT y se agregó
   `EmpresaService.get_id_empresa_actual(db)`
   (`app/features/empresas/service.py`) que la infiere de la base del tenant
-  actual. El `POST /repartos-dia/` que recibe `id_empresa` en el body
-  **no se tocó** (no estaba en el pedido de Flutter). Contrato regenerado
+  actual. ~~El `POST /repartos-dia/` que recibe `id_empresa` en el body
+  no se tocó (no estaba en el pedido de Flutter).~~ Contrato regenerado
   (`python scripts/snapshot_openapi.py --salida tests/snapshots/openapi_baseline.json`);
   el único cambio visible para el cliente es que esos parámetros ya no
   existen (si los sigue mandando, FastAPI los ignora por no estar declarados).
+  **Corregido (2026-09-15), revisión cruzada con el front:** ese "no
+  tocado" era un error de alcance. El pedido de Flutter miró los GET; el
+  cliente que manda **bodies** con `id_empresa` es el de sincronización
+  offline (`PagoCreate`, `PedidoCreate`, `POST /repartos-dia/`), y ese
+  nunca mandó `id_empresa` — por eso `pago_repository.dart` y
+  `pedido_repository.dart` daban 422 (`id_empresa: Field required`) en
+  **toda** venta y todo cobro hechos desde `venta_screen.dart`, que pasa
+  siempre por la cola offline. Se aplicó el mismo criterio que a los GET:
+  - `PagoCreate.id_empresa` y `PagoLibreIn.id_empresa`: `int` obligatorio →
+    `Optional[int] = None`. El router (`crear_pago`, `crear_pago_libre`)
+    ignora el valor si llega y usa `EmpresaService.get_id_empresa_actual(db)`
+    siempre.
+  - `PedidoBase.id_empresa`: `int = 1` hardcodeado → `Optional[int] = None`.
+    `PedidoCreate` ya no lo redeclara obligatorio. `PedidoService.crear_pedido`
+    excluye `id_empresa` del `model_dump()` y lo resuelve con
+    `EmpresaService.get_id_empresa_actual(db)`.
+  - `RepartoDiaBase.id_empresa`: `int = 1` → `Optional[int] = None`;
+    `crear_reparto_dia` ya resolvía mal el valor del cliente, ahora usa
+    `EmpresaService.get_id_empresa_actual(db)`.
+  - Ninguno de los tres confía en el `id_empresa` del cliente aunque lo
+    mande: siempre se ignora y se infiere del tenant, igual que en los GET.
+  Contrato regenerado de nuevo (cambia el body esperado de `POST /pagos`,
+  `POST /pagos/libre` y `POST /pedidos/`). Verificado en vivo contra el
+  tenant `demo`: un pago con `id_cuenta` y sin `id_empresa` baja la deuda
+  de la cuenta correcta.
+
+  **De paso, un bug real encontrado (no reportado por el front):**
+  `pago_repository.dart` manda `tipo_pago: "cobro_reparto"`, que no
+  matchea ninguno de los valores que `PagoService.crear` reconoce
+  (`COBRO_PEDIDO`, `PAGO_DEUDA`, `EGRESO_EMPRESA`) para impactar la cuenta
+  del cliente y la recaudación del reparto. Con ese valor, el pago se
+  crea y aparece en caja, pero **no** descuenta deuda ni suma a la
+  recaudación del reparto — falla en silencio. `tipo_pago` es texto libre
+  (`str`, sin enum) del lado del backend. Falta decidir con el front: o
+  mandan `COBRO_PEDIDO` (que es lo que ya usa el flujo online equivalente
+  en `pedidos/service.py:345`), o el backend agrega `cobro_reparto` como
+  alias reconocido. Ninguna de las dos se hizo todavía — es una decisión a
+  coordinar, no algo para resolver por iniciativa propia.
 - ~~`empleado.py` tiene `id_empresa=1` hardcodeado en dos lugares.~~
   ~~`pago.py` también: `crear_ingreso` y `crear_egreso` tienen `id_empresa=1`
   hardcodeado.~~ **Arreglado (2026-09-15).** Los tres reemplazados por

@@ -2700,7 +2700,8 @@
         "campos": [
           "client_uuid",
           "fecha!",
-          "id_empresa!",
+          "id_cuenta",
+          "id_empresa",
           "id_medio_pago!",
           "id_pedido",
           "id_repartodia",
@@ -2879,7 +2880,7 @@
       "forma": {
         "campos": [
           "id_cuenta!",
-          "id_empresa!",
+          "id_empresa",
           "id_medio_pago!",
           "id_repartodia",
           "legajo!",
@@ -2938,7 +2939,7 @@
           "estado",
           "fecha!",
           "id_cuenta",
-          "id_empresa!",
+          "id_empresa",
           "id_medio_pago!",
           "id_repartodia!",
           "idempotency_key",

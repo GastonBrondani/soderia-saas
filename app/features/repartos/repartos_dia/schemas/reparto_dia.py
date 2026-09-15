@@ -8,7 +8,10 @@ class RepartoDiaBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id_usuario: int
-    id_empresa: int = 1
+    # El servidor infiere la empresa del tenant actual (ver
+    # EmpresaService.get_id_empresa_actual). Si el cliente lo manda, se
+    # ignora.
+    id_empresa: Optional[int] = None
     fecha: date
     observacion: Optional[str] = None
 

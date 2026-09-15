@@ -15,6 +15,7 @@ from app.features.inventario.movimientos.models.movimiento_stock import Movimien
 from app.features.inventario.stock.models.stock import Stock
 from app.features.catalogo.productos.models.producto import Producto
 from app.features.repartos.visitas.models.visita import Visita
+from app.features.empresas.service import EmpresaService
 # from app.features.repartos.recorridos.models.recorrido import Recorrido Ver despues como implementar
 
 
@@ -517,11 +518,13 @@ class PedidoService:
                     **pedido_create.model_dump(
                         exclude_unset=True,
                         exclude={
+                            "id_empresa",
                             "monto_total",
                             "monto_abonado",
                             "items",
                         },
                     ),
+                    "id_empresa": EmpresaService.get_id_empresa_actual(db),
                     "id_cuenta": id_cuenta,
                     "monto_total": total,
                     "monto_abonado": abonado,

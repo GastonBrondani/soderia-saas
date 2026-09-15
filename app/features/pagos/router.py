@@ -44,13 +44,14 @@ def crear_pago(payload: PagoCreate, db: Session = Depends(get_db)):
     """
     return PagoService.crear(
         db,
-        id_empresa=payload.id_empresa,
+        id_empresa=EmpresaService.get_id_empresa_actual(db),
         id_medio_pago=payload.id_medio_pago,
         fecha=payload.fecha,
         monto=payload.monto,
         tipo_pago=payload.tipo_pago,
         observacion=payload.observacion,
         legajo=payload.legajo,
+        id_cuenta=payload.id_cuenta,
         id_pedido=payload.id_pedido,
         id_repartodia=payload.id_repartodia,
         idempotency_key=payload.idempotency_key,
