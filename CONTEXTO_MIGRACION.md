@@ -547,13 +547,23 @@ en el contrato. Sin autenticación: `POST /auth/login`, `POST /auth/token`,
   (dead code: nunca hizo nada desde que existe). Se agregó
   `verificar_alta()`: chequea que exista `empresa`, el rol ADMIN y el
   usuario admin con ese rol; si falta algo, el alta corta con error y el
-  tenant queda en PROVISIONANDO (no ACTIVO roto). `--sin-seed` ahora
-  controla este paso (antes no controlaba nada real). Probado en vivo: alta
+  tenant queda en PROVISIONANDO (no ACTIVO roto). Probado en vivo: alta
   completa de un tenant de prueba (verificación en verde,
-  `EmpresaService.get_id_empresa_actual` resuelve bien) y alta con
-  `--sin-seed` (verificación correctamente detecta la falta de `empresa`
-  si se corre a mano); los dos tenants de prueba se dieron de baja con
+  `EmpresaService.get_id_empresa_actual` resuelve bien); dado de baja con
   `--rollback` al terminar.
+  ~~`--sin-seed` ahora controla este paso (antes no controlaba nada
+  real).~~ **Borrado (2026-09-15, segunda revisión cruzada).** Un flag
+  cuyo único efecto posible era saltear la creación de `empresa` —y por lo
+  tanto garantizar que `verificar_alta()` fallara y el tenant quedara en
+  PROVISIONANDO— no tiene variante útil. El alta de un cliente no necesita
+  opciones: se borró el flag entero.
+  De paso: la lista de subdominios/códigos que ninguna sodería puede tener
+  vivía duplicada en `tenancy.py` (`{"www","api","admin","app"}`, usada
+  para resolver el tenant por subdominio) y en `crear_tenant.py`
+  (`RESERVADOS`, una lista más larga que también bloquea nombres
+  reservados de Postgres). Unificadas en `CODIGOS_RESERVADOS`
+  (`app/core/tenancy.py`); `crear_tenant.py` la importa en vez de tener su
+  propia copia.
 
 ---
 

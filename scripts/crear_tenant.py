@@ -50,15 +50,11 @@ from app.core.control_plane import (  # noqa: E402
     init_control_plane,
     invalidar_cache,
 )
+# Misma lista que usa el resolver de subdominios en tenancy.py (antes eran
+# dos listas separadas que podian divergir sin que nadie lo notara).
+from app.core.tenancy import CODIGOS_RESERVADOS as RESERVADOS  # noqa: E402
 
 RE_CODIGO = re.compile(r"^[a-z][a-z0-9]{2,30}$")
-
-# Palabras que no pueden ser codigo de tenant porque chocan con subdominios
-# de infraestructura o con nombres reservados de Postgres.
-RESERVADOS = {
-    "www", "api", "admin", "app", "mail", "ftp", "static", "cdn", "assets",
-    "postgres", "template0", "template1", "public", "control", "test",
-}
 
 
 def validar_codigo(codigo: str) -> str:
@@ -275,11 +271,6 @@ def main() -> int:
         help="Para poner esta sodería en otro servidor de Postgres.",
     )
     parser.add_argument(
-        "--sin-seed",
-        action="store_true",
-        help="No crear la fila de empresa (para pruebas puntuales).",
-    )
-    parser.add_argument(
         "--rollback",
         action="store_true",
         help="Borra la base y el registro si el alta quedo a medias.",
@@ -338,17 +329,15 @@ def main() -> int:
     try:
         crear_base(db_name)
         migrar(dsn)
-        if not args.sin_seed:
-            crear_empresa(dsn, args.razon_social)
+        crear_empresa(dsn, args.razon_social)
         password = crear_admin(dsn, args.admin_usuario, args.admin_password)
         preparar_archivos(codigo)
 
-        if not args.sin_seed:
-            problemas = verificar_alta(dsn, args.admin_usuario)
-            if problemas:
-                raise RuntimeError(
-                    "El alta quedo incompleta:\n  - " + "\n  - ".join(problemas)
-                )
+        problemas = verificar_alta(dsn, args.admin_usuario)
+        if problemas:
+            raise RuntimeError(
+                "El alta quedo incompleta:\n  - " + "\n  - ".join(problemas)
+            )
 
         with control_session() as db:
             fila = db.execute(

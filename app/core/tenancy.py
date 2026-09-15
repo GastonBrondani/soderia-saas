@@ -99,6 +99,16 @@ class usar_tenant:
 # Extraccion del codigo desde el request
 # ----------------------------------------------------------------------
 
+# Codigos que ninguna sodería puede tener: chocan con subdominios de
+# infraestructura (www, api, admin, cdn...) o con nombres reservados de
+# Postgres (postgres, template0/1, public). Fuente unica: crear_tenant.py
+# valida el alta contra esta misma lista (antes eran dos listas separadas
+# que podian divergir sin que nadie lo notara).
+CODIGOS_RESERVADOS = frozenset({
+    "www", "api", "admin", "app", "mail", "ftp", "static", "cdn", "assets",
+    "postgres", "template0", "template1", "public", "control", "test",
+})
+
 
 def _codigo_desde_subdominio(host: str) -> str | None:
     # host puede venir con puerto: solmar.tuapp.com:8000
@@ -110,7 +120,7 @@ def _codigo_desde_subdominio(host: str) -> str | None:
     if base and host.endswith("." + base):
         sub = host[: -(len(base) + 1)]
         # Descartar subdominios de infraestructura
-        if sub and sub not in {"www", "api", "admin", "app"}:
+        if sub and sub not in CODIGOS_RESERVADOS:
             # solo el primer nivel: a.b.tuapp.com -> a
             return sub.split(".")[0]
     return None
