@@ -265,10 +265,11 @@ con movimientos de archivos.
   (`python scripts/snapshot_openapi.py --salida tests/snapshots/openapi_baseline.json`);
   el único cambio visible para el cliente es que esos parámetros ya no
   existen (si los sigue mandando, FastAPI los ignora por no estar declarados).
-- `empleado.py` tiene `id_empresa=1` hardcodeado en dos lugares.
-- `pago.py` también: `crear_ingreso` y `crear_egreso` tienen
-  `id_empresa=1` hardcodeado. Encontrado en el paso 3 al limpiar código
-  comentado, no estaba anotado.
+- ~~`empleado.py` tiene `id_empresa=1` hardcodeado en dos lugares.~~
+  ~~`pago.py` también: `crear_ingreso` y `crear_egreso` tienen `id_empresa=1`
+  hardcodeado.~~ **Arreglado (2026-09-15).** Los tres reemplazados por
+  `EmpresaService.get_id_empresa_actual(db)`. No rompe contrato (nunca fue
+  un parámetro expuesto al cliente).
 
 **Bugs silenciosos** (se pueden arreglar sin tocar el contrato):
 

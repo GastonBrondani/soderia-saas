@@ -6,6 +6,7 @@ from sqlalchemy import select
 from app.core.exceptions import Conflict, NotFound
 from app.features.empleados.models.empleado import Empleado
 from app.features.empleados.schemas import EmpleadoCreate, EmpleadoUpdate
+from app.features.empresas.service import EmpresaService
 from app.features.personas.models.persona import Persona
 
 
@@ -22,18 +23,20 @@ def crear_empleado(db: Session, payload: EmpleadoCreate) -> Empleado:
         if not persona:
             raise NotFound("La persona (dni) no existe. Envía 'persona' para crearla.")
 
+    id_empresa = EmpresaService.get_id_empresa_actual(db)
+
     # Evitar duplicado por regla de negocio (dni, id_empresa)
     duplicado = db.execute(
         select(Empleado).where(
             Empleado.dni == dni_final,
-            Empleado.id_empresa == 1,
+            Empleado.id_empresa == id_empresa,
         )
     ).scalar_one_or_none()
     if duplicado:
         raise Conflict("Ya existe un empleado para ese DNI en esa empresa.")
 
     nuevo = Empleado(
-        id_empresa=1,  # Es uno porque ya cree la empresa y tiene id 1
+        id_empresa=id_empresa,
         dni=dni_final,
         fecha_ingreso=payload.fecha_ingreso,
     )

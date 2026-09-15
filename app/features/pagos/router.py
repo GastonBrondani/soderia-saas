@@ -19,6 +19,7 @@ from app.features.pagos.schemas import (
 )
 from app.features.pagos.services.pago import PagoService
 from app.features.documentos.services.comprobante_pago import ComprobantePagoService as ComprobantePagoServiceExtended
+from app.features.empresas.service import EmpresaService
 
 
 router = APIRouter(prefix="/pagos", tags=["Pagos"],dependencies=[Depends(get_current_user)],)
@@ -70,7 +71,7 @@ def crear_ingreso(
 
     pago = PagoService.crear(
         db,
-        id_empresa=1,
+        id_empresa=EmpresaService.get_id_empresa_actual(db),
         id_medio_pago=payload.id_medio_pago,
         fecha=payload.fecha or datetime.utcnow(),
         monto=payload.monto,
@@ -98,7 +99,7 @@ def crear_egreso(
 
     pago = PagoService.crear(
         db,
-        id_empresa=1,
+        id_empresa=EmpresaService.get_id_empresa_actual(db),
         id_medio_pago=payload.id_medio_pago,
         fecha=payload.fecha or datetime.utcnow(),
         monto=payload.monto,
