@@ -1,5 +1,5 @@
 from __future__ import annotations
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Mapping, Optional
 
 from sqlalchemy import select
@@ -32,7 +32,7 @@ def registrar_evento_cliente(db: Session,*,legajo: int,codigo_evento: TipoEvento
     hist = Historico(
         legajo=legajo,
         id_evento=tipo.id_evento,
-        fecha=datetime.now(),  
+        fecha=datetime.now(timezone.utc),
         observacion=observacion,
         datos=dict(datos) if datos is not None else None,
     )

@@ -48,7 +48,7 @@ class CajaEmpresa(Base):
 
     #Campos
     fecha: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False),
+        DateTime(timezone=True),
         server_default=text("now()"),
         nullable=False,
     )

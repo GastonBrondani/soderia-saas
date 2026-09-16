@@ -26,7 +26,7 @@ class Visita(Base):
         nullable=False,
     )
 
-    fecha: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    fecha: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     estado: Mapped[str] = mapped_column(String(50), nullable=False)
 
     # Offline sync: clave de idempotencia (única) y uuid generado por la tablet

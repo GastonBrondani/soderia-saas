@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from decimal import Decimal
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
@@ -290,7 +290,7 @@ def pagar_periodo_servicio(
             db,
             id_empresa=EmpresaService.get_id_empresa_actual(db),
             id_medio_pago=id_medio_pago,
-            fecha=datetime.now(),
+            fecha=datetime.now(timezone.utc),
             monto=monto,
             tipo_pago=TipoPago.SERVICIO,
             observacion=observacion

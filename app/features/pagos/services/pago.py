@@ -250,7 +250,7 @@ class PagoService:
             db,
             id_empresa=EmpresaService.get_id_empresa_actual(db),
             id_medio_pago=data.id_medio_pago,
-            fecha=datetime.now(timezone.utc).replace(tzinfo=None),
+            fecha=datetime.now(timezone.utc),
             monto=data.monto,
             tipo_pago=TipoPago.PAGO_DEUDA,
             observacion=data.observacion,

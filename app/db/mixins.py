@@ -13,7 +13,7 @@ sucursales o depositos dentro de una misma sodería.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import Boolean, DateTime, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column
@@ -47,7 +47,10 @@ class SoftDeleteMixin:
 
     def marcar_eliminado(self) -> None:
         self.eliminado = True
-        self.eliminado_en = datetime.now()
+        # UTC, no datetime.now(): eliminado_en es DateTime(timezone=True).
+        # Un naive local en una columna aware queda mal interpretado (Postgres
+        # asume que un valor naive ya esta en el TimeZone de la sesion).
+        self.eliminado_en = datetime.now(timezone.utc)
 
 
 class AuditoriaMixin(TimestampMixin):

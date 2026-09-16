@@ -1,5 +1,5 @@
 from __future__ import annotations
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy import select
@@ -43,7 +43,7 @@ class EnvaseClienteService:
         if delta == 0:
             raise AppError("El delta no puede ser 0.")
 
-        now = fecha or datetime.now()
+        now = fecha or datetime.now(timezone.utc)
 
         if validar_envase:
             EnvaseClienteService._get_producto_envase(db, id_producto)
@@ -149,7 +149,7 @@ class EnvaseClienteService:
                 "Debe venir al menos un envase entregado o devuelto.",
             )
 
-        now = fecha or datetime.now()
+        now = fecha or datetime.now(timezone.utc)
 
         # Validar producto envase una sola vez
         EnvaseClienteService._get_producto_envase(db, id_producto)

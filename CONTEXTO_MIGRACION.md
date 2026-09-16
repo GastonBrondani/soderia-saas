@@ -765,6 +765,81 @@ en el contrato. Sin autenticación: `POST /auth/login`, `POST /auth/token`,
     través del rol nuevo — si algún `GRANT` hubiera quedado corto, esto
     lo habría mostrado como `permission denied`, no hizo falta un test
     aparte.
+- **Timestamps pasan a UTC con timezone (2026-09-16, segunda revisión
+  cruzada).** Convivían `datetime.now()` (hora local del proceso) y
+  `datetime.utcnow()` (UTC) escribiendo a columnas `DateTime(timezone=False)`
+  — un pago a las 22:00 en Córdoba quedaba guardado como la 01:00 del día
+  siguiente, y un pedido creado en el mismo minuto por otro camino quedaba
+  en las 22:00. El cierre de caja y los reportes diarios los contaban en
+  días distintos. Se hizo ahora porque la base de cada sodería todavía
+  está vacía de datos reales — no hay filas históricas ambiguas que
+  interpretar; el día que se importen los datos del cliente actual, esa
+  importación tiene que escribir directo en el formato nuevo.
+  - **Convención**: toda columna "cuándo pasó esto" es
+    `DateTime(timezone=True)`, escrita siempre con
+    `datetime.now(timezone.utc)`. Nunca `datetime.now()` (hora local
+    ambigua) ni `datetime.utcnow()` (deprecado en 3.12, devuelve naive).
+    Mostrarle una fecha al usuario en su zona horaria es una conversión en
+    el borde de salida (`.astimezone(ZoneInfo(tenant.timezone))`), no algo
+    que se decide al guardar.
+  - Migración `b2c3d4e5f6a7`: 9 columnas pasadas de `timestamp` a
+    `timestamptz` — `pago.fecha`, `pedido.fecha`, `visita.fecha`
+    (este no tenía ni `timezone=False` explícito, `DateTime` a secas ya es
+    naive por default), `documentos.fecha_carga`, `caja_empresa.fecha`,
+    `historico.fecha`, `movimiento_stock.fecha`,
+    `movimiento_envase_cliente.fecha` (idem, sin `timezone=False`
+    explícito) y `lista_de_precios.fecha_creacion`. `USING col AT TIME
+    ZONE 'UTC'` reinterpreta cualquier valor naive existente como si ya
+    fuera UTC — para los datos de prueba de este entorno alcanza, no está
+    garantizado para datos reales (por eso hacerlo ahora, con la base
+    vacía, y no después de importar).
+  - 11 call sites con `datetime.now()`/`.replace(tzinfo=None)` migrados a
+    `datetime.now(timezone.utc)`: `auditoria/service.py`,
+    `catalogo/servicios/service.py`, `clientes/routers/cliente_cuenta.py`
+    (2), `inventario/envases/service.py` (2), `pedidos/service.py` (3,
+    incluido un `datetime.combine(rep.fecha, now.time())` que perdía el
+    tzinfo — pasó a `now.timetz()`), `repartos/visitas/router.py`, y los
+    5 que ya se habían arreglado con `.replace(tzinfo=None)` en un paso
+    anterior (ya no hace falta pelarle el tzinfo).
+  - **Excepción a la regla, a propósito**: `db/mixins.py::marcar_eliminado()`
+    escribía `eliminado_en` (que ya era `timezone=True`, sin que nadie lo
+    hubiera notado) con `datetime.now()` naive — un bug dormido, porque el
+    mixin todavía no lo usa ningún modelo. Arreglado igual, para cuando se
+    use.
+  - **Excepción real, no un descuido**: `reportes/router.py` calculaba
+    "mes/año actual" para el default de un reporte con `datetime.now()`.
+    Esto no es un timestamp que se guarda — es "qué mes es hoy" para el
+    usuario, y tiene que ser el mes actual en la zona del tenant, no en
+    UTC (cerca de medianoche en Argentina, UTC ya está en el día
+    siguiente). Se cambió a
+    `datetime.now(ZoneInfo(tenant_actual().timezone))`, no a
+    `datetime.now(timezone.utc)`. Regla completa: "cuándo pasó un evento
+    que se guarda" → UTC siempre; "qué día/mes es hoy para una persona" →
+    zona del tenant.
+  - **Pendiente, fuera de alcance de este cambio**: varios `.date()` sobre
+    un datetime ahora UTC-aware (ej. `ProductoCliente.fecha_entrega` en
+    `envases/service.py`) heredan el mismo problema que `reportes/router.py`
+    tenía — cerca de medianoche en Argentina, `.date()` de un datetime UTC
+    puede dar el día siguiente. No se tocó: son columnas `Date` (no
+    `DateTime`) que representan un día de calendario/negocio, no un
+    instante, y requieren la misma decisión de "zona del tenant" que se
+    tomó para el reporte — pero una por una, no en este barrido.
+  - **Pendiente, necesita decisión con Flutter**: los payloads de sync
+    offline mandan `fecha` como ISO 8601 sin offset (ej.
+    `"2026-09-15T10:00:00"`), que Pydantic parsea como naive — hoy
+    interpretado tal cual (sin conversión) por Postgres al guardar en la
+    columna ahora `timestamptz`, igual que pasaba antes con la columna
+    naive. Si esa hora es hora local del dispositivo (probable, es la
+    hora que ve el repartidor en la tablet) y no UTC, sigue quedando mal
+    interpretada — no se resolvió, porque no hay forma de saberlo desde
+    acá con certeza sin confirmar con el front qué maneja el dispositivo.
+    Lo correcto de fondo es que el cliente mande el offset (`Z` o
+    `-03:00`) en el ISO 8601; mientras tanto, esto no es peor que el
+    comportamiento de antes, solo que ahora la columna es honesta sobre
+    ser `timestamptz`.
+  - Verificado en vivo: migración aplicada contra `demo` (las 9 columnas
+    quedaron `timestamp with time zone`), suite completa de tests (23)
+    pasando contra Postgres real después de migrar.
 
 ---
 

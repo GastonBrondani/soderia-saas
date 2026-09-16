@@ -37,7 +37,7 @@ class MovimientoEnvaseCliente(Base):
 
     # Campos
     fecha: Mapped[datetime] = mapped_column(
-        DateTime,
+        DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
     )

@@ -2,6 +2,7 @@ import io
 from datetime import datetime
 from enum import Enum
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 import openpyxl
 from fastapi import APIRouter, Depends, Query
@@ -11,6 +12,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.core.database import get_db
 from app.core.security import get_current_user
+from app.core.tenancy import tenant_actual
 from app.features.clientes.models.cliente import Cliente
 from app.features.repartos.agenda.models.cliente_dia_semana import ClienteDiaSemana
 from app.features.maestros.models.dia_semana import DiaSemana
@@ -113,7 +115,10 @@ def exportar_excel_cuentas(
     dia: Optional[DiaSemanaFiltro] = Query(default=None, description="Filtrar por día de visita (lunes, martes, ...)."),
     db: Session = Depends(get_db),
 ):
-    hoy = datetime.now()
+    # Zona del tenant, no UTC: "mes actual" tiene que ser el mes actual en
+    # Cordoba (o la zona que sea), no el que da la hora del servidor cerca
+    # de la medianoche.
+    hoy = datetime.now(ZoneInfo(tenant_actual().timezone))
     mes_q = mes or hoy.month
     anio_q = anio or hoy.year
 

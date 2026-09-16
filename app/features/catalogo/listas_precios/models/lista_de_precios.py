@@ -22,7 +22,7 @@ class ListaDePrecios(Base):
     # Campos
     nombre: Mapped[str] = mapped_column(String(100), nullable=False)
     fecha_creacion: Mapped["DateTime"] = mapped_column(
-        DateTime(timezone=False),
+        DateTime(timezone=True),
         nullable=False,
         server_default=text("now()"),
     )

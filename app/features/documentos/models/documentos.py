@@ -29,7 +29,7 @@ class Documentos(Base):
     tipo_archivo: Mapped[Optional[str]] = mapped_column(String(50))
     url_archivo: Mapped[str] = mapped_column(String(500), nullable=False)
     fecha_carga: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False),
+        DateTime(timezone=True),
         nullable=False,
         server_default=text("now()"),
     )

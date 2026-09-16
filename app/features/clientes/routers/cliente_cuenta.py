@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal, ROUND_HALF_UP
 from fastapi import APIRouter, Depends
 from app.core.security import get_current_user, CurrentUser
@@ -105,7 +105,7 @@ def aplicar_interes(
         raise AppError("El cliente no tiene deuda pendiente.")
 
     # Verificar que exista al menos un pedido impago con más de 30 días de antigüedad
-    limite_fecha = datetime.now() - timedelta(days=30)
+    limite_fecha = datetime.now(timezone.utc) - timedelta(days=30)
     pedido_vencido = db.execute(
         select(Pedido).where(
             Pedido.legajo == legajo,
@@ -125,7 +125,7 @@ def aplicar_interes(
         raise AppError("El interés calculado es $0.00.")
 
     cuenta.deuda = _q2(deuda_anterior + interes)
-    fecha = datetime.now()
+    fecha = datetime.now(timezone.utc)
 
     try:
         registrar_evento_cliente(

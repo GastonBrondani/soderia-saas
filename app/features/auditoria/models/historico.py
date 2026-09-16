@@ -33,7 +33,7 @@ class Historico(Base):
 
     #Campos
     fecha: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False),
+        DateTime(timezone=True),
         nullable=False,
         server_default=text("now()"),
     )

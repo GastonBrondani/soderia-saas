@@ -53,7 +53,7 @@ class Pedido(Base):
 
 
     #Campos
-    fecha: Mapped[datetime] = mapped_column(DateTime(timezone=False), nullable=False)
+    fecha: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     monto_total: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
     monto_abonado: Mapped[Decimal] = mapped_column(Numeric(14, 2), server_default="0")
     estado: Mapped[str] = mapped_column(

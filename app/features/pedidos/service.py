@@ -2,7 +2,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from sqlalchemy import select, cast, Date
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 from app.core.exceptions import AppError, BusinessRuleViolation, Conflict, NotFound
 from app.features.pagos.models.pago import Pago
@@ -96,7 +96,7 @@ class PedidoService:
         db: Session, id_pedido: int, data: PedidoConfirmarIn
     ) -> PedidoOut:
         try:
-            now = datetime.now()
+            now = datetime.now(timezone.utc)
 
             # 1) Traer pedido y bloquear
             ped = db.execute(
@@ -380,7 +380,10 @@ class PedidoService:
 
             # 9) visita
             fecha_visita = (
-                datetime.combine(rep.fecha, now.time())
+                # timetz() en vez de time(): preserva el tzinfo de `now`.
+                # datetime.combine con un time() naive da un datetime naive,
+                # y Visita.fecha es DateTime(timezone=True).
+                datetime.combine(rep.fecha, now.timetz())
                 if hasattr(rep, "fecha") and rep.fecha
                 else now
             )
@@ -665,7 +668,7 @@ class PedidoService:
                 db,
                 id_empresa=id_empresa,
                 id_medio_pago=data.id_medio_pago,
-                fecha=datetime.now(),
+                fecha=datetime.now(timezone.utc),
                 monto=monto,
                 tipo_pago=TipoPago.PAGO_DEUDA,
                 observacion=data.observacion or "Pago de cuenta sin pedido",

@@ -39,7 +39,7 @@ class Pago(Base):
 
     id_medio_pago: Mapped[int] = mapped_column(ForeignKey("medio_pago.id_medio_pago"), nullable=False)
 
-    fecha: Mapped[datetime] = mapped_column(DateTime(timezone=False), nullable=False)
+    fecha: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     monto: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
 
     tipo_pago: Mapped[str] = mapped_column(String(30), nullable=False)

@@ -1,4 +1,4 @@
-from datetime import datetime,date
+from datetime import datetime, date, timezone
 from typing import Optional
 
 from fastapi import Depends,status,APIRouter,Query,Response
@@ -37,7 +37,7 @@ def crear_visita_cliente(payload: VisitaCreate, response: Response, cliente: Cli
         response.status_code = status.HTTP_200_OK
         return existente
 
-    fecha = payload.fecha or datetime.now()
+    fecha = payload.fecha or datetime.now(timezone.utc)
 
     visita = Visita(
         legajo=cliente.legajo,

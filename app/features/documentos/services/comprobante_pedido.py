@@ -127,7 +127,7 @@ class ComprobantePedidoService:
             nombre_archivo=filename,
             tipo_archivo="COMPROBANTE_PEDIDO",
             url_archivo=url_archivo,
-            fecha_carga=datetime.now(timezone.utc).replace(tzinfo=None),
+            fecha_carga=datetime.now(timezone.utc),
             observacion=f"Comprobante de pedido #{id_pedido}",
         )
         db.add(doc)
