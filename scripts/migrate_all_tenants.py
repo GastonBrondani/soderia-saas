@@ -32,9 +32,30 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from sqlalchemy import create_engine, text  # noqa: E402
 
+from app.core.config import settings  # noqa: E402
 from app.core.control_plane import TenantInfo, listar_tenants  # noqa: E402
 
 RAIZ = Path(__file__).resolve().parents[1]
+
+
+def dsn_admin(tenant: TenantInfo) -> str:
+    """DSN de superusuario para correr migraciones.
+
+    Ojo: NO es tenant.dsn. Desde que crear_tenant.py da de alta un rol de
+    Postgres propio por sodería (privilegios limitados a su base),
+    tenant.dsn es ese rol restringido -- sirve para las queries de la app
+    en runtime, pero no tiene permiso para CREATE TABLE/ALTER TABLE. Las
+    migraciones siempre necesitan el rol admin (TENANT_DB_USER), sobre el
+    mismo host/puerto que el resto de las soderías.
+
+    Esto asume que todas las bases viven en el Postgres de TENANT_DB_HOST.
+    Si algún día una sodería usa --dsn-override para vivir en otro
+    servidor, este script no la va a alcanzar -- no hay forma de
+    distinguir "dsn_override por otro host" de "dsn_override por el rol
+    restringido" con lo que expone TenantInfo hoy. No es el caso de
+    ninguna sodería actual.
+    """
+    return settings.tenant_dsn(settings.tenant_db_name(tenant.codigo))
 
 
 @dataclass
@@ -78,10 +99,11 @@ def version_head() -> str:
 
 def migrar_uno(tenant: TenantInfo, revision: str) -> Resultado:
     inicio = time.monotonic()
-    antes = version_actual(tenant.dsn)
+    dsn = dsn_admin(tenant)
+    antes = version_actual(dsn)
 
     proceso = subprocess.run(
-        ["alembic", "-x", f"url={tenant.dsn}", "upgrade", revision],
+        ["alembic", "-x", f"url={dsn}", "upgrade", revision],
         cwd=RAIZ,
         capture_output=True,
         text=True,
@@ -102,7 +124,7 @@ def migrar_uno(tenant: TenantInfo, revision: str) -> Resultado:
         codigo=tenant.codigo,
         ok=True,
         version_antes=antes,
-        version_despues=version_actual(tenant.dsn),
+        version_despues=version_actual(dsn),
         segundos=duracion,
     )
 
@@ -151,7 +173,7 @@ def main() -> int:
         ancho = max(len(t.codigo) for t in tenants)
         atrasadas = 0
         for t in tenants:
-            actual = version_actual(t.dsn)
+            actual = version_actual(dsn_admin(t))
             al_dia = actual == head
             atrasadas += 0 if al_dia else 1
             marca = "  al dia" if al_dia else "  PENDIENTE"

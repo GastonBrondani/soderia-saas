@@ -20,6 +20,7 @@ tests se saltan solos -- no rompen CI en una maquina sin Postgres.
 
 from __future__ import annotations
 
+import sys
 import uuid
 
 import pytest
@@ -74,69 +75,59 @@ def control_plane_db():
 @pytest.fixture
 def crear_tenant_prueba(control_plane_db):
     """Da de alta una sodería de prueba de verdad (mismo camino que
-    scripts/crear_tenant.py) y la borra al terminar el test.
+    scripts/crear_tenant.py, rol de Postgres restringido incluido) y la
+    borra al terminar el test.
 
-    Devuelve una funcion `crear(codigo) -> (codigo, dsn, password_admin)`.
+    Usar el mismo camino que el script real (en vez de repetir sus pasos
+    con la sesion admin) es a proposito: si el rol restringido de la
+    sodería quedo con algun GRANT faltante, cualquiera de los tests que
+    usan este fixture (login, bootstrap, stock, idempotencia,
+    cancelar_deuda) lo va a mostrar como un permission-denied, no algo que
+    haya que testear aparte.
+
+    Devuelve una funcion `crear(codigo) -> (codigo, dsn_runtime, password_admin)`,
+    donde `dsn_runtime` ya es el DSN del rol restringido, no el admin.
     """
-    from app.core.config import get_settings
-    from app.core.control_plane import (
-        EstadoTenant,
-        Tenant,
-        control_session,
-        invalidar_cache,
-    )
-    from scripts.crear_tenant import (
-        borrar_base,
-        crear_admin,
-        crear_base,
-        crear_empresa,
-        migrar,
-        preparar_archivos,
-        verificar_alta,
-    )
+    from app.core.control_plane import Tenant, control_session, invalidar_cache
+    from scripts.crear_tenant import borrar_rol_tenant
 
-    settings = get_settings()
     creados: list[tuple[str, str]] = []
 
     def _crear(codigo: str, razon_social: str = "Sodería de prueba"):
-        db_name = settings.tenant_db_name(codigo)
-        dsn = settings.tenant_dsn(db_name)
+        from scripts.crear_tenant import main as crear_tenant_main
 
-        with control_session() as db:
-            db.add(
-                Tenant(
-                    codigo=codigo,
-                    razon_social=razon_social,
-                    db_name=db_name,
-                    estado=EstadoTenant.PROVISIONANDO,
-                    plan="basico",
-                    timezone="America/Argentina/Cordoba",
-                )
-            )
-            db.commit()
+        password_admin = f"prueba-{codigo}-Aa1!"
 
-        crear_base(db_name)
-        migrar(dsn)
-        crear_empresa(dsn, razon_social)
-        password = crear_admin(dsn, "admin", None)
-        preparar_archivos(codigo)
-
-        problemas = verificar_alta(dsn, "admin")
-        assert not problemas, f"alta de '{codigo}' quedo incompleta: {problemas}"
+        argv_original = sys.argv
+        sys.argv = [
+            "crear_tenant.py",
+            "--codigo", codigo,
+            "--razon-social", razon_social,
+            "--timezone", "America/Argentina/Cordoba",
+            "--admin-password", password_admin,
+        ]
+        try:
+            rc = crear_tenant_main()
+        finally:
+            sys.argv = argv_original
+        assert rc == 0, f"crear_tenant.py fallo para '{codigo}' (ver stdout de arriba)"
 
         with control_session() as db:
             fila = db.execute(select(Tenant).where(Tenant.codigo == codigo)).scalar_one()
-            fila.estado = EstadoTenant.ACTIVO
-            db.commit()
-        invalidar_cache(codigo)
+            db_name = fila.db_name
+            dsn_runtime = fila.dsn_override
+            assert dsn_runtime, "crear_tenant.py deberia haber seteado dsn_override"
 
         creados.append((codigo, db_name))
-        return codigo, dsn, password
+        return codigo, dsn_runtime, password_admin
 
     yield _crear
 
+    from scripts.crear_tenant import borrar_base
+
     for codigo, db_name in creados:
         borrar_base(db_name)
+        borrar_rol_tenant(codigo)
         with control_session() as db:
             fila = db.execute(
                 select(Tenant).where(Tenant.codigo == codigo)

@@ -17,16 +17,25 @@ Pasos que ejecuta, en orden:
     3. alembic upgrade head sobre esa base (las tablas maestras --dias de
        la semana, medios de pago, roles, etc.-- vienen de la migracion de
        seed, no de este script)
-    4. Crea la fila de `empresa` con la razon social pasada por parametro
-    5. Crea el usuario administrador y muestra su contraseña una sola vez
-    6. Prepara las carpetas de archivos
-    7. Verifica que el alta haya quedado completa (empresa, rol ADMIN,
-       usuario admin con ese rol)
-    8. Marca el tenant como ACTIVO en el control plane
+    4. Crea un rol de Postgres propio para la sodería, con privilegios
+       solo sobre su base (ver crear_rol_tenant) -- la app va a conectarse
+       en runtime con este rol, no con el admin
+    5. Crea la fila de `empresa` con la razon social pasada por parametro
+    6. Crea el usuario administrador y muestra su contraseña una sola vez
+    7. Prepara las carpetas de archivos
+    8. Verifica que el alta haya quedado completa (empresa, rol ADMIN,
+       usuario admin con ese rol) -- usando el rol de Postgres nuevo, asi
+       la verificacion prueba de una los privilegios de verdad
+    9. Marca el tenant como ACTIVO en el control plane, con dsn_override
+       apuntando al rol nuevo
 
-Si algo falla en el medio -- incluida la verificacion del paso 7 -- el
+Si algo falla en el medio -- incluida la verificacion del paso 8 -- el
 tenant queda en estado PROVISIONANDO y no atiende requests. Con --rollback
-se limpia todo y se vuelve a empezar.
+se limpia todo (base, rol de Postgres y registro) y se vuelve a empezar.
+
+--dsn-override salta la creacion del rol: si estas apuntando la sodería a
+otro servidor de Postgres, asumimos que ese servidor tiene su propio
+esquema de privilegios y no tratamos de imponerle el nuestro.
 """
 
 from __future__ import annotations
@@ -41,6 +50,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from sqlalchemy import create_engine, select, text  # noqa: E402
+from sqlalchemy.engine import URL  # noqa: E402
 
 from app.core.config import settings  # noqa: E402
 from app.core.control_plane import (  # noqa: E402
@@ -114,6 +124,93 @@ def borrar_base(db_name: str) -> None:
             )
             conn.execute(text(f'DROP DATABASE IF EXISTS "{db_name}"'))
         print(f"  base eliminada: {db_name}")
+    finally:
+        engine.dispose()
+
+
+def nombre_rol_tenant(codigo: str) -> str:
+    return f"tenant_{codigo}"
+
+
+def crear_rol_tenant(db_name: str, codigo: str) -> tuple[str, str]:
+    """Un rol de Postgres por sodería, con privilegios solo sobre su base.
+
+    Hasta ahora todas las soderías comparten el mismo rol admin
+    (TENANT_DB_USER) para leer y escribir en runtime -- el aislamiento
+    entre tenants depende enteramente de que el código elija bien el
+    engine (una base por sodería, pero un solo usuario de Postgres que
+    puede conectarse a cualquiera). Esto agrega una segunda línea de
+    defensa real: si algún día hay una fuga (un bug que arma mal un DSN,
+    una query contra el engine equivocado), el rol de una sodería
+    directamente no puede conectarse a la base de otra -- Postgres lo
+    rechaza antes de que la query corra.
+
+    Se ejecuta DESPUES de migrar(): hace falta que las tablas ya existan
+    para el GRANT sobre ellas. Los privilegios sobre tablas *futuras*
+    (la próxima migración que agregue una tabla) los cubre el
+    ALTER DEFAULT PRIVILEGES de más abajo.
+    """
+    rol = nombre_rol_tenant(codigo)
+    password = secrets.token_urlsafe(24)
+
+    admin_engine = create_engine(settings.maintenance_dsn(), isolation_level="AUTOCOMMIT")
+    try:
+        with admin_engine.connect() as conn:
+            conn.execute(
+                text(f'CREATE ROLE "{rol}" WITH LOGIN PASSWORD :p'),
+                {"p": password},
+            )
+            conn.execute(text(f'GRANT CONNECT ON DATABASE "{db_name}" TO "{rol}"'))
+    finally:
+        admin_engine.dispose()
+
+    # Los privilegios sobre el schema hay que otorgarlos conectado a la
+    # base en si (GRANT CONNECT en la maintenance db no alcanza).
+    db_engine = create_engine(settings.tenant_dsn(db_name))
+    try:
+        with db_engine.begin() as conn:
+            conn.execute(text(f'GRANT USAGE, CREATE ON SCHEMA public TO "{rol}"'))
+            conn.execute(text(f'GRANT ALL ON ALL TABLES IN SCHEMA public TO "{rol}"'))
+            conn.execute(text(f'GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO "{rol}"'))
+            conn.execute(
+                text(
+                    f'ALTER DEFAULT PRIVILEGES IN SCHEMA public '
+                    f'GRANT ALL ON TABLES TO "{rol}"'
+                )
+            )
+            conn.execute(
+                text(
+                    f'ALTER DEFAULT PRIVILEGES IN SCHEMA public '
+                    f'GRANT ALL ON SEQUENCES TO "{rol}"'
+                )
+            )
+    finally:
+        db_engine.dispose()
+
+    print(f"  rol de Postgres creado: {rol} (privilegios limitados a {db_name})")
+    return rol, password
+
+
+def borrar_rol_tenant(codigo: str) -> None:
+    """Para --rollback. Llamar DESPUES de borrar_base(): mientras la base
+    exista, el rol puede tener privilegios por default (ALTER DEFAULT
+    PRIVILEGES) que Postgres no deja tirar hasta que se libere la base."""
+    rol = nombre_rol_tenant(codigo)
+    engine = create_engine(settings.maintenance_dsn(), isolation_level="AUTOCOMMIT")
+    try:
+        with engine.connect() as conn:
+            existe = conn.execute(
+                text("SELECT 1 FROM pg_roles WHERE rolname = :r"), {"r": rol}
+            ).scalar()
+            if not existe:
+                return
+            conn.execute(text(f'DROP ROLE "{rol}"'))
+        print(f"  rol de Postgres eliminado: {rol}")
+    except Exception as exc:
+        print(
+            f"  no se pudo borrar el rol '{rol}' (revisalo a mano): {exc}",
+            file=sys.stderr,
+        )
     finally:
         engine.dispose()
 
@@ -286,6 +383,8 @@ def main() -> int:
     if args.rollback:
         print(f"Revirtiendo alta de '{codigo}'...")
         borrar_base(db_name)
+        if not args.dsn_override:
+            borrar_rol_tenant(codigo)
         with control_session() as db:
             fila = db.execute(
                 select(Tenant).where(Tenant.codigo == codigo)
@@ -329,11 +428,27 @@ def main() -> int:
     try:
         crear_base(db_name)
         migrar(dsn)
+
+        dsn_runtime = dsn
+        if not args.dsn_override:
+            rol, password_rol = crear_rol_tenant(db_name, codigo)
+            dsn_runtime = URL.create(
+                settings.TENANT_DB_DRIVER,
+                username=rol,
+                password=password_rol,
+                host=settings.TENANT_DB_HOST,
+                port=settings.TENANT_DB_PORT,
+                database=db_name,
+            ).render_as_string(hide_password=False)
+
         crear_empresa(dsn, args.razon_social)
         password = crear_admin(dsn, args.admin_usuario, args.admin_password)
         preparar_archivos(codigo)
 
-        problemas = verificar_alta(dsn, args.admin_usuario)
+        # Verificar con el DSN de runtime (el rol limitado, si se creo):
+        # de paso confirma que los GRANT quedaron bien, no solo que los
+        # datos existen.
+        problemas = verificar_alta(dsn_runtime, args.admin_usuario)
         if problemas:
             raise RuntimeError(
                 "El alta quedo incompleta:\n  - " + "\n  - ".join(problemas)
@@ -344,6 +459,8 @@ def main() -> int:
                 select(Tenant).where(Tenant.codigo == codigo)
             ).scalar_one()
             fila.estado = EstadoTenant.ACTIVO
+            if not args.dsn_override:
+                fila.dsn_override = dsn_runtime
             db.commit()
         invalidar_cache(codigo)
 

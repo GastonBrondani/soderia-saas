@@ -723,6 +723,48 @@ en el contrato. Sin autenticación: `POST /auth/login`, `POST /auth/token`,
   cualquier rotación ahí sí necesita el runbook completo (coordinar
   timing, avisar, etc.) — esta rotación fue puramente del entorno de
   desarrollo.
+- **Un rol de Postgres por tenant (2026-09-16, segunda revisión
+  cruzada).** Hasta ahora todas las soderías compartían el mismo rol
+  admin (`TENANT_DB_USER`) para leer y escribir en runtime: el
+  aislamiento entre tenants dependía enteramente de que el código eligiera
+  bien el engine (una base por sodería, pero un solo usuario de Postgres
+  que puede conectarse a cualquiera). Se aprovechó que hoy solo hay un
+  tenant real (`demo`) para hacerlo ahora — con diez clientes vivos esto
+  es una migración coordinada, con uno es un `CREATE ROLE`/`GRANT`.
+  - `scripts/crear_tenant.py`: nuevas `crear_rol_tenant()`/
+    `borrar_rol_tenant()`. El alta crea un rol `tenant_<codigo>` con
+    privilegios (`GRANT ALL` + `ALTER DEFAULT PRIVILEGES` para tablas
+    futuras) limitados a su propia base, y lo guarda en
+    `Tenant.dsn_override` — el campo ya existía, pensado originalmente
+    para "esta sodería vive en otro servidor"; ahora también se usa para
+    "esta sodería usa un rol restringido en el mismo servidor". `--rollback`
+    borra el rol además de la base. `--dsn-override` salta la creación del
+    rol (asume que ese servidor tiene su propio esquema de privilegios).
+    `verificar_alta()` ahora corre contra el rol restringido, no el admin:
+    de paso confirma que los GRANT quedaron bien.
+  - `scripts/migrate_all_tenants.py`: las migraciones **siempre** necesitan
+    el rol admin (`CREATE TABLE`/`ALTER TABLE` no están en los privilegios
+    del rol de tenant a propósito). Se agregó `dsn_admin()` que reconstruye
+    el DSN admin desde `settings` + `codigo` en vez de usar `tenant.dsn`
+    (que ahora, para un tenant con rol restringido, apunta a ese rol).
+    Documentado ahí mismo el límite: si algún día una sodería usa
+    `--dsn-override` para vivir en otro servidor, este script no la va a
+    alcanzar — no hay forma de distinguir los dos usos de `dsn_override`
+    con lo que expone `TenantInfo` hoy. No es el caso de ninguna sodería
+    actual.
+  - `demo` (el único tenant existente) migrado al rol restringido
+    (`tenant_demo`) a mano, sin script dedicado — es un caso único, no
+    hacía falta una migración general.
+  - Verificado en vivo: alta completa de un tenant de prueba por CLI
+    (rol creado, login + `/catalogo/bootstrap` + `/stock/` funcionando
+    a través del rol restringido), `--rollback` limpiando el rol sin
+    dejar huérfanos, `migrate_all_tenants.py --dry-run` reportando bien
+    la versión de `demo` (rol restringido) y de un tenant de prueba
+    (admin) por igual, y la suite completa de tests de integración
+    (login, bootstrap, stock, idempotencia, cancelar-deuda) pasando a
+    través del rol nuevo — si algún `GRANT` hubiera quedado corto, esto
+    lo habría mostrado como `permission denied`, no hizo falta un test
+    aparte.
 
 ---
 
