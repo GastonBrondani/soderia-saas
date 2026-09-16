@@ -1,17 +1,28 @@
 """
-Contrato de los payloads que manda la app Flutter en la cola de
-sincronizacion offline (pago_repository.dart, pedido_repository.dart,
-visita_repository.dart), validados contra los schemas Pydantic reales.
+Contrato de los payloads que manda la app Flutter, validados contra los
+schemas Pydantic reales. Dos grupos:
+
+1. Cola de sincronizacion offline (pago_repository.dart,
+   pedido_repository.dart, visita_repository.dart) -- los JSON de esos son
+   copia exacta de lo que paso el equipo de Flutter. Si cambian del lado
+   del front, este archivo es el que hay que actualizar -- y viceversa: es
+   el contrato escrito entre los dos repos, no una aproximacion.
+
+2. Payloads "online" (llamadas directas, no encoladas) que tocan
+   `id_empresa` -- agregado 2026-09-16 porque `ComboCreate.id_empresa`
+   quedo sin arreglar en la primera pasada (solo se tocaron los 3 de la
+   cola) y crear un combo empezo a dar 422 en cuanto el front dejo de
+   mandarlo. **Ojo**: a diferencia del grupo 1, estos NO son copias
+   literales de un payload real de Flutter -- no tengo acceso al repo del
+   front para confirmar el JSON exacto. Son la reconstruccion minima
+   valida contra el schema actual. Sirven para no repetir esta clase de
+   regresion, pero conviene reemplazarlos por el payload literal cuando
+   alguien del lado de Flutter lo pueda confirmar.
 
 Nace de la revision cruzada del 2026-09-15: dos de los tres bugs bloqueantes
 que encontro esa revision (id_empresa obligatorio en PagoCreate/PedidoCreate,
 que rompia toda venta y todo cobro offline) los habria detectado un test
 como este antes de llegar a produccion.
-
-Los JSON de aca abajo son la copia exacta que paso el equipo de Flutter.
-Si cambian del lado del front, este archivo es el que hay que actualizar
--- y viceversa: es el contrato escrito entre los dos repos, no una
-aproximacion.
 
 Actualizado 2026-09-15 (segunda revisión): `tipo_pago` dejó de ser un `str`
 libre. `PagoCreate.tipo_pago` ahora es `Literal["COBRO_PEDIDO",
@@ -34,6 +45,8 @@ from pydantic import ValidationError
 from app.features.pagos.schemas import PagoCreate
 from app.features.pedidos.schemas.pedido import PedidoCreate
 from app.features.repartos.visitas.schemas import VisitaCreate
+from app.features.catalogo.combos.schemas.combo import ComboCreate
+from app.features.repartos.camiones.schemas import CamionRepartoCreate
 
 # ----------------------------------------------------------------------
 # Payloads literales, tal como los arma la tablet.
@@ -135,3 +148,39 @@ def test_tipo_pago_cobro_pedido_tambien_es_valido():
     """El otro valor que un cliente puede elegir (pago atado a un pedido)."""
     payload = dict(PAGO_OFFLINE, tipo_pago="COBRO_PEDIDO")
     PagoCreate.model_validate(payload)
+
+
+# ----------------------------------------------------------------------
+# Payloads online (no offline-sync) que tocan id_empresa.
+#
+# Reconstruccion minima valida contra el schema, no copia literal del
+# front (ver nota en el docstring del modulo).
+# ----------------------------------------------------------------------
+
+COMBO_ONLINE = {
+    "nombre": "Combo docena",
+    "descripcion": None,
+    "estado": True,
+    "productos": [],
+}
+
+CAMION_ONLINE = {
+    "patente": "AB123CD",
+    "activo": True,
+}
+
+
+def test_combo_sin_id_empresa_no_falla():
+    """Regresion puntual: ComboCreate.id_empresa quedo sin arreglar en la
+    primera pasada del fix de id_empresa (solo se tocaron los 3 payloads
+    de la cola offline) y crear un combo empezo a dar 422 en cuanto el
+    front dejo de mandarlo."""
+    assert "id_empresa" not in COMBO_ONLINE
+    combo = ComboCreate.model_validate(COMBO_ONLINE)
+    assert combo.id_empresa is None
+
+
+def test_camion_sin_id_empresa_no_falla():
+    assert "id_empresa" not in CAMION_ONLINE
+    camion = CamionRepartoCreate.model_validate(CAMION_ONLINE)
+    assert camion.id_empresa is None
