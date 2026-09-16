@@ -711,6 +711,18 @@ en el contrato. Sin autenticación: `POST /auth/login`, `POST /auth/token`,
   Si el día de mañana hace falta una API de alta/baja de soderías (hoy es
   `scripts/crear_tenant.py` a mano), se vuelve a agregar junto con los
   endpoints reales, no antes.
+- **Credenciales del entorno de dev local rotadas (2026-09-16).**
+  `SECRET_KEY` y la contraseña del rol `postgres` (usada tanto para
+  `CONTROL_PLANE_DATABASE_URL` como `TENANT_DB_PASSWORD`) se regeneraron:
+  nada del SaaS está en producción todavía, no hay sesiones activas ni
+  cliente al que avisar, así que se hizo directo, sin runbook. Las que
+  estaban en el `.env.local` commiteado (ya sacado del índice en
+  `a62f72a`) se dan por comprometidas y no se usan en ningún lado — ese
+  archivo ni siquiera lo lee la app (`config.py` solo carga `.env`). El
+  día que haya un Postgres real de producción con datos reales atrás,
+  cualquier rotación ahí sí necesita el runbook completo (coordinar
+  timing, avisar, etc.) — esta rotación fue puramente del entorno de
+  desarrollo.
 
 ---
 
