@@ -9,6 +9,7 @@ from app.features.catalogo.servicios.models.cliente_servicio import ClienteServi
 from app.features.catalogo.servicios.models.cliente_servicio_periodo import ClienteServicioPeriodo
 from app.features.pagos.services.pago import PagoService
 from app.features.pagos.schemas import TipoPago
+from app.features.empresas.service import EmpresaService
 from app.features.auditoria.service import registrar_evento_cliente
 from app.features.auditoria.schemas.enums_historico import TipoEventoCodigoEnum
 
@@ -287,7 +288,7 @@ def pagar_periodo_servicio(
 
         pago = PagoService.crear(
             db,
-            id_empresa=1,
+            id_empresa=EmpresaService.get_id_empresa_actual(db),
             id_medio_pago=id_medio_pago,
             fecha=datetime.now(),
             monto=monto,

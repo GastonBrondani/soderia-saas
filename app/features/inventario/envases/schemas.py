@@ -43,7 +43,9 @@ class EnvaseMovimientoManualIn(BaseModel):
 
     legajo: int
     id_producto: int
-    id_empresa: int = 1
+    # El servidor infiere la empresa del tenant actual. Si el cliente lo
+    # manda, se ignora.
+    id_empresa: Optional[int] = None
     entregados: int = Field(default=0, ge=0)
     devueltos: int = Field(default=0, ge=0)
     id_repartodia: Optional[int] = None

@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from app.core.database import get_db
+from app.features.empresas.service import EmpresaService
 from app.features.inventario.movimientos.models.movimiento_stock import MovimientoStock
 from app.features.inventario.movimientos.schemas.movimiento_stock import MovimientoCreate, MovimientoOut
 from app.features.inventario.stock.service import StockService
@@ -24,7 +25,7 @@ def crear(payload: MovimientoCreate, db: Session = Depends(get_db)):
     StockService.ajustar_stock(
         db,
         id_producto=payload.id_producto,
-        id_empresa=1,  
+        id_empresa=EmpresaService.get_id_empresa_actual(db),
         delta=delta,
         tipo=payload.tipo_movimiento,
         fecha=payload.fecha,

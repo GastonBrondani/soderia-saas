@@ -8,6 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import AppError, NotFound
+from app.features.empresas.service import EmpresaService
 from app.features.catalogo.combos.models.combo import Combo
 from app.features.catalogo.combos.models.combo_producto import ComboProducto
 from app.features.catalogo.productos.models.producto import Producto
@@ -55,7 +56,7 @@ def crear_combo(db: Session, payload: ComboCreate) -> Combo:
         _validar_productos_existentes(db, ids)
 
         obj = Combo(
-            id_empresa=payload.id_empresa,
+            id_empresa=EmpresaService.get_id_empresa_actual(db),
             nombre=payload.nombre,
             descripcion=payload.descripcion,
             estado=payload.estado,

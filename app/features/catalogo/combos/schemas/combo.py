@@ -26,6 +26,10 @@ class ComboCreate(ComboBase):
     """
     Para crear un combo con su composición (opcional).
     """
+    # El servidor infiere la empresa del tenant actual (ver
+    # EmpresaService.get_id_empresa_actual). Si el cliente lo manda, se
+    # ignora.
+    id_empresa: Optional[int] = None
     productos: List[ComboProductoIn] = []
 
 

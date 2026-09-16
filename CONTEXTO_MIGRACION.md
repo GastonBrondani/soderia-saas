@@ -371,16 +371,42 @@ momento puede correr detrás de `get_current_user` (o sea, siempre).
   422 en el schema en vez de crear un pago que no impacta nada. Los 4
   lugares que ya usaban las otras 3 constantes internas
   (`INGRESO_EMPRESA`/`EGRESO_EMPRESA`/`SERVICIO`) se migraron al enum para
-  que no haya un string literal repetido en ningún lado. **Ojo:** el
-  enum se armó auditando los literales del código actual, no datos reales
-  de producción — si en la tabla `pago` de producción hay algún
-  `tipo_pago` histórico que no sea uno de esos 5, `PagoOut` va a romper
-  con 500 al leer esa fila. Verificalo antes de deployar esto.
+  que no haya un string literal repetido en ningún lado.
+  **Corregido (2026-09-16):** el enum se armó auditando los literales del
+  código, no datos reales de producción, y `PagoOut.tipo_pago` había
+  quedado tipado como `TipoPago` — un valor histórico fuera de esos 5 en
+  producción rompería la lectura con 500. Se revirtió: `PagoOut.tipo_pago`
+  es `str` de nuevo (tolerante en la salida), `PagoCreate.tipo_pago` sigue
+  en `Literal["COBRO_PEDIDO", "PAGO_DEUDA"]` (estricto en la entrada). El
+  `SELECT DISTINCT tipo_pago FROM pago` sobre datos reales se hace al
+  diseñar la importación del cliente actual, no antes.
 - ~~`empleado.py` tiene `id_empresa=1` hardcodeado en dos lugares.~~
   ~~`pago.py` también: `crear_ingreso` y `crear_egreso` tienen `id_empresa=1`
   hardcodeado.~~ **Arreglado (2026-09-15).** Los tres reemplazados por
   `EmpresaService.get_id_empresa_actual(db)`. No rompe contrato (nunca fue
   un parámetro expuesto al cliente).
+- ~~`ComboCreate.id_empresa` seguía `int` obligatorio: crear un combo daba
+  422 apenas el front dejó de mandarlo.~~ **Arreglado (2026-09-16),
+  barrido completo.** Se grepeó `id_empresa` en todos los `schemas/` del
+  repo y se aplicó el mismo tratamiento a todo lo que quedaba sin tocar:
+  - Bodies de request que todavía exigían `id_empresa` del cliente:
+    `ComboCreate` (`catalogo/combos/schemas/combo.py`),
+    `CamionRepartoCreate` (`repartos/camiones/schemas.py`, tenía
+    `= 1` de default, igual se sacó), `StockCreate` y
+    `EnvaseMovimientoManualIn` (estos dos sin router que los use hoy —
+    arreglados igual, por si el día de mañana alguien los cablea sin
+    revisar esto).
+  - Hardcodeos de `id_empresa=1` que quedaban sueltos (no eran bodies,
+    pero mismo problema de fondo): `clientes/service.py` (alta de
+    cliente, incluye el chequeo de duplicado por DNI+empresa),
+    `catalogo/servicios/service.py` (pago de período de servicio),
+    `inventario/movimientos/router.py` (`POST /movimientos-stock/`),
+    `repartos/recorridos/service.py` (`abrir_recorrido`, egreso de stock
+    inicial).
+  - Todos resueltos con `EmpresaService.get_id_empresa_actual(db)`.
+    Contrato regenerado (solo `POST /combos/` cambió de forma visible:
+    los demás ya tenían default o no eran bodies). Verificado en vivo:
+    crear un combo sin `id_empresa` ya no da 422.
 
 **Bugs silenciosos** (se pueden arreglar sin tocar el contrato):
 

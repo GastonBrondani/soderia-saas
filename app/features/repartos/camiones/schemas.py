@@ -10,7 +10,9 @@ class CamionRepartoBase(BaseModel):
 
 class CamionRepartoCreate(CamionRepartoBase):
     """Datos necesarios para crear un camión de reparto."""
-    pass
+    # El servidor infiere la empresa del tenant actual. Si el cliente lo
+    # manda, se ignora.
+    id_empresa: Optional[int] = None
 
 class CamionRepartoUpdate(BaseModel):   
     activo: Optional[bool] = None

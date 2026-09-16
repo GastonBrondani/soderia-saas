@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session, joinedload, selectinload
 from typing import Any, Dict, List, Optional
 
 from app.core.exceptions import AppError, Conflict, NotFound, ValidationFailed
+from app.features.empresas.service import EmpresaService
 
 
 #Modelos utilizados
@@ -159,16 +160,17 @@ class ClienteService:
                     )
 
             # 2) Duplicado por empresa
+            id_empresa = EmpresaService.get_id_empresa_actual(db)
             existe = (
                 db.query(Cliente)
-                .filter(and_(Cliente.dni == dni_final, Cliente.id_empresa == 1))
+                .filter(and_(Cliente.dni == dni_final, Cliente.id_empresa == id_empresa))
                 .first()
             )
             if existe:
                 raise Conflict("Ya existe un cliente para ese DNI en esta empresa.")
 
             # 3) Crear cliente
-            nuevo = Cliente(id_empresa=1, observacion=payload.observacion)
+            nuevo = Cliente(id_empresa=id_empresa, observacion=payload.observacion)
             nuevo.persona = persona
             db.add(nuevo)
             db.flush()  # genera legajo

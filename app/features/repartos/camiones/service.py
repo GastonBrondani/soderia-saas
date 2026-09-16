@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from app.core.exceptions import Conflict, NotFound
+from app.features.empresas.service import EmpresaService
 from app.features.repartos.camiones.models.camion_reparto import CamionReparto
 from app.features.repartos.camiones.schemas import (
     CamionRepartoCreate,
@@ -26,7 +27,7 @@ def crear_camion(db: Session, payload: CamionRepartoCreate) -> CamionReparto:
 
     entity = CamionReparto(
         patente=payload.patente,
-        id_empresa=payload.id_empresa,
+        id_empresa=EmpresaService.get_id_empresa_actual(db),
         activo=payload.activo,
     )
     db.add(entity)

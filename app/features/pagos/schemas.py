@@ -64,7 +64,11 @@ class PagoOut(BaseModel):
     id_medio_pago: int
     fecha: datetime
     monto: Decimal
-    tipo_pago: TipoPago
+    # str, no TipoPago: esto lee filas de `pago` que ya existen (incluida
+    # data historica de produccion, si algun dia se importa). Estricto en
+    # la entrada (PagoCreate.tipo_pago), tolerante en la salida -- un
+    # valor viejo o inesperado no puede tirar 500 al leerlo.
+    tipo_pago: str
     observacion: Optional[str]
 
     legajo: Optional[int]

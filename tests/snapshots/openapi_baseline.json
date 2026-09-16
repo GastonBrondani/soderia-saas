@@ -2428,7 +2428,7 @@
         "campos": [
           "descripcion",
           "estado",
-          "id_empresa!",
+          "id_empresa",
           "nombre!",
           "productos"
         ],

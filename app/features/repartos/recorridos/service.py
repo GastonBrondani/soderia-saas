@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from app.features.empresas.service import EmpresaService
 from app.features.repartos.recorridos.models.recorrido import Recorrido
 from app.features.repartos.recorridos.schemas import RecorridoCreate
 from app.features.inventario.stock.service import StockService, TipoMovimiento
@@ -6,6 +7,8 @@ from app.features.inventario.stock.service import StockService, TipoMovimiento
 class RecorridoService:
     @staticmethod
     def abrir_recorrido(db: Session, payload: RecorridoCreate) -> Recorrido:
+        id_empresa = EmpresaService.get_id_empresa_actual(db)
+
         # 1) Crear el recorrido
         rec = Recorrido(
             id_empleado=payload.id_empleado,
@@ -25,7 +28,7 @@ class RecorridoService:
                 StockService.ajustar_stock(
                     db,
                     id_producto=item.id_producto,
-                    id_empresa=1,      # viene en el payload
+                    id_empresa=id_empresa,
                     delta=-item.cantidad,               # EGRESO => negativo
                     tipo=TipoMovimiento.egreso,
                     observacion="Carga inicial de recorrido",
