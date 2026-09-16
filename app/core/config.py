@@ -72,13 +72,14 @@ class Settings(BaseSettings):
     TENANT_DB_MAINTENANCE_DB: str = "postgres"
 
     # Cuantos engines mantener vivos en memoria a la vez. Este cache es POR
-    # PROCESO: con gunicorn --workers 4 (Dockerfile.prod) hay 4 caches
+    # PROCESO: Dockerfile.prod corre gunicorn con --workers ${WEB_CONCURRENCY:-2}
+    # (configurable en Railway, no fijo), asi que hay esa cantidad de caches
     # independientes. Cada engine abre su propio pool, asi que las
     # conexiones maximas reales son:
-    #   GUNICORN_WORKERS * TENANT_ENGINE_CACHE_SIZE * (TENANT_POOL_SIZE + TENANT_MAX_OVERFLOW)
-    # Con estos defaults y 4 workers: 4 * 10 * (2+2) = 160, todavia arriba
-    # de un Postgres default (max_connections=100). Subi max_connections o
-    # meté PgBouncer antes de sumar mas soderias activas.
+    #   WEB_CONCURRENCY * TENANT_ENGINE_CACHE_SIZE * (TENANT_POOL_SIZE + TENANT_MAX_OVERFLOW)
+    # Con estos defaults y WEB_CONCURRENCY=2 (el default del Dockerfile):
+    # 2 * 10 * (2+2) = 80, dentro de un Postgres default (max_connections=100).
+    # Si subís WEB_CONCURRENCY en Railway, recalculá esta cuenta.
     TENANT_ENGINE_CACHE_SIZE: int = 10
     TENANT_POOL_SIZE: int = 2
     TENANT_MAX_OVERFLOW: int = 2

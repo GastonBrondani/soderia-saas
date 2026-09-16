@@ -1,0 +1,23 @@
+# COPY . . en Dockerfile.prod empaqueta todo lo que no este aca. Sin este
+# archivo, un build local con un .env presente (secretos de verdad) queda
+# horneado dentro de la imagen -- se encontro corriendo un build de prueba
+# para validar el CMD nuevo de Railway (2026-09-16).
+
+.git/
+.env
+.env.*
+!.env.example
+
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+.pytest_cache/
+.ruff_cache/
+data/
+
+.github/
+README.md
+CONTEXTO_MIGRACION.md
+INFORME_RESPUESTA_BACKEND.md

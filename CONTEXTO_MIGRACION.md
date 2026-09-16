@@ -630,17 +630,22 @@ en el contrato. Sin autenticación: `POST /auth/login`, `POST /auth/token`,
 ## Cosas a tener en la cabeza
 
 - **Conexiones.** El caché de engines de `core/database.py` es **por
-  proceso**, y `Dockerfile.prod` corre `gunicorn --workers 4`: la fórmula
-  real es `GUNICORN_WORKERS × TENANT_ENGINE_CACHE_SIZE × (TENANT_POOL_SIZE +
-  TENANT_MAX_OVERFLOW)`. **Corregido (2026-09-15, revisión cruzada con el
-  front):** con los defaults viejos (15 × (5+5), sin contar workers) daba
-  150 contra un Postgres de 100 — pero el número real, con los 4 workers,
-  era 600. Los defaults de `.env.example`/`config.py` bajaron a
-  `TENANT_ENGINE_CACHE_SIZE=10`, `TENANT_POOL_SIZE=2`,
-  `TENANT_MAX_OVERFLOW=2` → `4 × 10 × 4 = 160`, que **sigue** arriba de
-  `max_connections=100`. O sea: subí `max_connections` en Postgres (a 200+)
-  antes de escalar clientes, o meté PgBouncer. El umbral de "meté
-  PgBouncer" es bastante más bajo de lo que decía esta sección antes.
+  proceso**, y `Dockerfile.prod` corre `gunicorn --workers ${WEB_CONCURRENCY:-2}`:
+  la fórmula real es `WEB_CONCURRENCY × TENANT_ENGINE_CACHE_SIZE ×
+  (TENANT_POOL_SIZE + TENANT_MAX_OVERFLOW)`. **Corregido (2026-09-15,
+  revisión cruzada con el front):** con los defaults viejos (15 × (5+5),
+  sin contar workers) daba 150 contra un Postgres de 100 — pero el número
+  real, con los entonces-4-workers-fijos, era 600. Los defaults de
+  `.env.example`/`config.py` bajaron a `TENANT_ENGINE_CACHE_SIZE=10`,
+  `TENANT_POOL_SIZE=2`, `TENANT_MAX_OVERFLOW=2`.
+  **Actualizado (2026-09-16):** el "4 workers" pasó a ser
+  `WEB_CONCURRENCY` (variable de Railway, default `2` en el Dockerfile,
+  no fijo — ver el punto de Railway más abajo), así que con los defaults
+  actuales es `2 × 10 × 4 = 80`, dentro de `max_connections=100`. Si se
+  sube `WEB_CONCURRENCY` en Railway, hay que recalcular esta cuenta —
+  con 4 workers otra vez sería `4 × 10 × 4 = 160`, arriba del límite: subí
+  `max_connections` en Postgres o meté PgBouncer antes de subir
+  `WEB_CONCURRENCY` sin más.
 - **El control plane es punto único de falla.** Si esa base se cae, no se
   resuelve ningún tenant.
 - **Reportes agregados entre soderías no son posibles directamente.** Es el
@@ -687,6 +692,51 @@ en el contrato. Sin autenticación: `POST /auth/login`, `POST /auth/token`,
   - `TENANT_RESOLUTION=both` (default) ya deja el header `X-Tenant` como
     fallback funcionando; no se tocó, sigue sirviendo para `curl`/scripts
     de mantenimiento.
+- **Deploy target confirmado: Railway, front y backend los dos ahí
+  (2026-09-16).** Con eso la duda sobre "el `Host` es confiable" del
+  punto anterior queda resuelta: no hay un edge administrado en el medio
+  reescribiendo cabeceras por su cuenta, así que la cautela sobre
+  `X-Forwarded-Host` que se había planteado no aplica — nginx del front
+  manda `proxy_set_header Host $host;` y listo. Dos cambios de este lado:
+  - **`Dockerfile.prod` corregido para Railway.** El bind pasó de
+    `0.0.0.0:8000` fijo a `[::]:${PORT:-8000}`: Railway asigna `$PORT` en
+    runtime (no es fijo), y la red privada entre servicios (para que el
+    front le pegue a `backend.railway.internal`) es IPv6 — uvicorn/gunicorn
+    escuchando en `[::]` cubre IPv4 y IPv6 en el mismo socket (uvicorn
+    suelto no hace ese dual-stack binding solo). El `--workers 4` fijo
+    pasó a `--workers ${WEB_CONCURRENCY:-2}` (ver el punto de Conexiones
+    más arriba, la fórmula de conexiones depende de este número). El
+    `CMD` tuvo que pasar de forma exec (`["gunicorn", ...]`) a forma
+    shell, porque la forma exec no expande variables de entorno.
+    Verificado con un build y un run reales (no solo lectura de código):
+    `docker build` + `docker run` con `PORT`/`WEB_CONCURRENCY` custom,
+    logs confirmando `Listening at: http://[::]:8080` y la cantidad de
+    workers pedida, y `GET /health` respondiendo 200 a través del puerto
+    publicado.
+  - **Encontrado de paso: no existía `.dockerignore`.** `COPY . .` en
+    `Dockerfile.prod` empaquetaba todo el directorio de build sin
+    excepciones — `.git/` completo (incluye el historial con el
+    `.env.local` que se sacó del índice pero sigue en commits viejos) y,
+    si existía un `.env` local al momento del build, ese archivo con
+    secretos reales quedaba horneado dentro de la imagen. Se encontró
+    corriendo el build de prueba de arriba (mi propio `.env` de dev
+    apareció adentro de la imagen en el primer intento). Agregado
+    `.dockerignore` excluyendo `.git/`, `.env*` y caches; verificado que
+    la imagen reconstruida ya no los tiene (`ls /app/.env` y
+    `ls /app/.git` fallan adentro del contenedor).
+  - **Recomendado, no implementado (decisión de infraestructura, no de
+    código): que el backend no tenga dominio público**, accesible solo
+    vía `backend.railway.internal` a través del proxy del front. Sin URL
+    pública, no hay forma de pegarle directo al backend con un `Host`
+    falsificado para elegir tenant — el aislamiento deja de depender
+    solo del claim `ten` del JWT. No requiere cambios acá: el backend ya
+    resuelve el tenant del `Host` que le llegue, sea la request directa
+    o vía el proxy interno del front, y ese `Host` sigue siendo el
+    público real (`proxy_set_header Host $host` lo preserva aunque el
+    upstream sea `.railway.internal`). Con esto, `CORS_ORIGINS` deja de
+    ejercer del todo (mismo origen ya no alcanza para que el navegador
+    haga cross-origin), pero se deja seteado igual como red de seguridad
+    — mismo criterio que ya se documentó arriba para la opción A.
 - **Convención de transacciones (2026-09-15, segunda revisión cruzada):
   los routers commitean, los services nunca.** Ningún service hace
   `db.begin()`/`with db.begin():` ni decide si commitear mirando

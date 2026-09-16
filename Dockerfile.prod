@@ -18,5 +18,22 @@ COPY . .
 
 EXPOSE 8000
 
-# Producción: gunicorn con workers uvicorn
-CMD ["gunicorn", "app.main:app", "-k", "uvicorn.workers.UvicornWorker", "--workers", "4", "--bind", "0.0.0.0:8000"]
+# Producción (Railway): gunicorn con workers uvicorn.
+#
+# --bind [::]:${PORT}, no 0.0.0.0: la red privada de Railway (para hablar
+# con backend.railway.internal desde el proxy del front) es IPv6. uvicorn
+# suelto no hace dual-stack binding; escuchando en [::] con gunicorn +
+# worker de uvicorn se cubren IPv4 y IPv6 en el mismo socket.
+#
+# $PORT lo asigna Railway en runtime (no es fijo como el 8000 de antes).
+# $WEB_CONCURRENCY reemplaza el "4" hardcodeado: la formula de conexiones
+# de CONTEXTO_MIGRACION.md (GUNICORN_WORKERS * TENANT_ENGINE_CACHE_SIZE *
+# (TENANT_POOL_SIZE + TENANT_MAX_OVERFLOW)) depende de este numero, asi
+# que si lo cambias en Railway, revisa esa cuenta.
+#
+# Forma shell (sin corchetes): CMD en forma exec no expande variables de
+# entorno, hace falta que corra via `sh -c` para que ${PORT}/${WEB_CONCURRENCY}
+# se sustituyan de verdad.
+CMD gunicorn app.main:app -k uvicorn.workers.UvicornWorker \
+    --workers ${WEB_CONCURRENCY:-2} \
+    --bind [::]:${PORT:-8000}
